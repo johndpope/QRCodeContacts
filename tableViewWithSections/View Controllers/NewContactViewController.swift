@@ -8,7 +8,16 @@
 
 import UIKit
 
-class NewContactViewController: ViewController, UITextFieldDelegate{
+protocol NewContactDelegate: AnyObject {
+    func createNew(contact: DelegateContact)
+}
+
+struct DelegateContact {
+    var firstName: String
+    var lastName: String
+}
+
+class NewContactViewController: UIViewController, UITextFieldDelegate{
     
     @IBOutlet weak var firstNameTextField: UITextField!
     
@@ -26,6 +35,7 @@ class NewContactViewController: ViewController, UITextFieldDelegate{
     
     var textFields: [UITextField]?
     
+    var delegate: NewContactDelegate?
     
     @IBOutlet weak var scrollView: UIScrollView!
     
@@ -37,7 +47,7 @@ class NewContactViewController: ViewController, UITextFieldDelegate{
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(dismissNewContactVC))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(saveContactTapped))
         
-        
+        //add notifications
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name:UIResponder.keyboardWillShowNotification, object: nil);
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name:UIResponder.keyboardWillHideNotification, object: nil);
         
@@ -69,14 +79,9 @@ class NewContactViewController: ViewController, UITextFieldDelegate{
     }
     
     @objc func keyboardWillHide(notification: NSNotification) {
-        //var info = notification.userInfo!
-        //let keyboardSize = (info[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue.size
-        //let contentInsets : UIEdgeInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: -keyboardSize!.height, right: 0.0)
-        //self.scrollView.contentInset = contentInsets
         self.scrollView.contentInset = UIEdgeInsets.zero
         self.scrollView.scrollIndicatorInsets = UIEdgeInsets.zero
         self.view.endEditing(true)
-        //self.scrollView.isScrollEnabled = false
     }
     
     @objc func dismissNewContactVC(){
@@ -85,14 +90,17 @@ class NewContactViewController: ViewController, UITextFieldDelegate{
     
     @objc func keyboardDismissTapped(){
         view.endEditing(true)
-        //self.scrollView.isScrollEnabled = true
     }
     
     
     @objc func saveContactTapped() {
         //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong. 
-        print("contact info")
-        textFields?.forEach{ print("\($0.placeholder ?? "nil") : \($0.text ?? "")") }
+        
+        //textFields?.forEach{ print("\($0.placeholder ?? "nil") : \($0.text ?? "")") }
+        
+        let delegateContact = DelegateContact(firstName: firstNameTextField.text ?? "", lastName: lastNameTextField.text ?? "")
+        delegate?.createNew(contact: delegateContact)
+        dismissNewContactVC()
     }
     
     
