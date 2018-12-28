@@ -12,13 +12,12 @@ import CoreData
 
 class CoreDataManager {
     var managedContext: NSManagedObjectContext
-    var contactsArray: [String] {
+    var contactsArray: [DelegateContact] {
         return self.fetchAllContacts()
     }
     
     init(context: NSManagedObjectContext){
         self.managedContext = context
-        //self.fetchAllContacts()
     }
     
     func saveContext(){
@@ -42,41 +41,33 @@ class CoreDataManager {
         )
         
         let newContact = Contact(context: managedContext)
-//        let newAddress = Address(context: managedContext)
-//        let newEmail = Email(context: managedContext)
-//        let newPhone = Phone(context: managedContext)
-//        newAddress.street =  address
-//        newPhone.number = phoneNumber
         newContact.firstName = delegateContact.firstName
         newContact.lastName = delegateContact.lastName
-        
+        newContact.address = delegateContact.address?.first
+        newContact.email = delegateContact.email?.first
+        newContact.phone = Int64(delegateContact.phone!.first!)
+        newContact.dob = delegateContact.dob
         newContact.uniqueID = delegateContact.uniqueID
         
-
         saveContext()
     }
     
     //read user data operation
-    func fetchAllContacts() -> [String]{
+    func fetchAllContacts() -> [DelegateContact]{
         let request: NSFetchRequest<Contact> = Contact.fetchRequest()
         
         //request.returnsObjectsAsFaults = false
         
-        var contacts = [String]()
+        var contacts = [DelegateContact]()
         do {
             let fetchResults = try managedContext.fetch(request)
-            for result in fetchResults {
-                //                let data = result.value(forKey: field) as! String
-                contacts.append(result.firstName!+" "+result.lastName!)
-                //print(result.name ?? "no name!")
-                //let data = result.uniqueID
-                //let data = result.addresses as! Set<Address>
-                //print(data.first?.street ?? "no address!")
-                //print(data ?? "no ID!")
+            for contact in fetchResults {
+                contacts.append(DelegateContact.convertToDelegateContact(from: contact))
             }
         } catch {
             print(error.localizedDescription)
         }
+        dump(contacts)
         return contacts
     }
     

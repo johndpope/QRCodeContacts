@@ -15,11 +15,25 @@ protocol NewContactDelegate: AnyObject {
 struct DelegateContact: Hashable {
     var firstName: String?
     var lastName: String?
+    var fullName: String {
+        return self.firstName! + " " + (self.lastName ?? "")
+    }
     var dob: Date?
-    var phone: Set<Int>?
+    var phone: Set<Int64>?
     var email: Set<String>?
     var address: Set<String>?
     var uniqueID: String
+    
+    static func convertToDelegateContact(from contact: Contact) -> DelegateContact {
+        let newDelegateContact = DelegateContact(firstName: contact.firstName,
+            lastName: contact.lastName,
+            dob: contact.dob,
+            phone: Set([contact.phone]),
+            email: Set([contact.email]) as? Set<String>,
+            address: Set([contact.address]) as? Set<String>,
+            uniqueID: contact.uniqueID!)
+        return newDelegateContact
+    }
 }
 
 class NewContactViewController: UIViewController{
@@ -66,6 +80,8 @@ class NewContactViewController: UIViewController{
         //remove notifications
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
+        newContact = nil
+        delegate = nil
     }
     
     //move the scrollview up when the keyboard blocks the current text field
@@ -107,7 +123,7 @@ class NewContactViewController: UIViewController{
         newContact?.firstName = firstNameTextField.text
         newContact?.lastName = lastNameTextField.text
         if let phoneInput = phoneTextField.text{
-            newContact?.phone = Set([Int(phoneInput)]) as? Set<Int>
+            newContact?.phone = Set([Int64(phoneInput)]) as? Set<Int64>
         }
         newContact?.email = Set([emailTextField.text]) as? Set<String>
         newContact?.address = Set([addressTextField.text]) as? Set<String>

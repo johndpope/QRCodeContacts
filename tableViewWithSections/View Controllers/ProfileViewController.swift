@@ -13,22 +13,27 @@ enum Section: Int{
 }
 
 class ProfileViewController: UITableViewController {
-    var userProfile: User?
+    var contactProfile: DelegateContact?
     
     override func viewDidLoad() {
         super.viewDidLoad()
 //        self.tableView.rowHeight = UITableView.automaticDimension
 //        self.tableView.estimatedRowHeight = 40
+        self.title = contactProfile?.fullName
     }
-
+    
+    deinit {
+        contactProfile = nil 
+    }
     
     //return number of rows in a section
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         switch section {
-            case Section.photo.rawValue, Section.name.rawValue, Section.dob.rawValue: return 1
-            case Section.phone.rawValue: return userProfile?.phone?.count ?? 0
-            case Section.email.rawValue: return userProfile?.email.count ?? 0
-            case Section.address.rawValue: return userProfile?.address.count ?? 0
+            case Section.photo.rawValue,Section.dob.rawValue: return 1
+            case Section.name.rawValue: return 0
+            case Section.phone.rawValue: return contactProfile?.phone?.count ?? 0
+            case Section.email.rawValue: return contactProfile?.email?.count ?? 0
+            case Section.address.rawValue: return contactProfile?.address?.count ?? 0
             default: return 0
         }
     }
@@ -40,7 +45,7 @@ class ProfileViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
             //case 0: return "Profile Picture"
-            case Section.name.rawValue: return "Name"
+            //case Section.name.rawValue: return "Name"
             case Section.dob.rawValue: return "Date of Birth"
             case Section.phone.rawValue: return "Phone"
             case Section.email.rawValue: return "Email"
@@ -57,7 +62,7 @@ class ProfileViewController: UITableViewController {
     }
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.section == Section.photo.rawValue && indexPath.row == 0 {
-            print("setting image cell width: ",self.view.frame.width / 1.5)
+            //print("setting image cell width: ",self.view.frame.width / 1.5)
             return self.view.frame.width / 1.5
         } else {
             return UITableView.automaticDimension
@@ -75,23 +80,26 @@ class ProfileViewController: UITableViewController {
             return photoCell
         case Section.name.rawValue:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
-            singleEntryCell.textLabel?.text = "\(userProfile?.firstName ?? "") \(userProfile?.lastName ?? "")"
+            singleEntryCell.textLabel?.text = "\(contactProfile?.firstName ?? "") \(contactProfile?.lastName ?? "")"
             return singleEntryCell
         case Section.dob.rawValue:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
-            singleEntryCell.textLabel?.text = userProfile?.dateOfBirth
+            singleEntryCell.textLabel?.text = contactProfile?.dob?.description
             return singleEntryCell
         case Section.phone.rawValue:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
-            singleEntryCell.textLabel?.text = userProfile?.phone?[indexPath.row]
+            let phoneNumbers = Array((contactProfile?.phone)!)
+            singleEntryCell.textLabel?.text = phoneNumbers[indexPath.row].description
             return singleEntryCell
         case Section.email.rawValue:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
-            singleEntryCell.textLabel?.text = userProfile?.email[indexPath.row]
+            let emails = Array((contactProfile?.email)!)
+            singleEntryCell.textLabel?.text = emails[indexPath.row]
             return singleEntryCell
         case Section.address.rawValue:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
-            singleEntryCell.textLabel?.text = userProfile?.address[indexPath.row]
+            let addresses = Array((contactProfile?.address)!)
+            singleEntryCell.textLabel?.text = addresses[indexPath.row]
             return singleEntryCell
         default:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell

@@ -25,9 +25,11 @@ class ContactsViewController: UITableViewController {
     
     var sectionHeaderHeight = CGFloat(25)
     
-    var firstCharToNameDict: [Character:[String]]?
+    var firstCharToNameDict: [Character:[DelegateContact]]?
     
     private var coreDataManager: CoreDataManager?
+    
+    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -39,10 +41,9 @@ class ContactsViewController: UITableViewController {
         coreDataManager = CoreDataManager(context: context)
         
         //get the existing contacts
-        if let currentContacts = coreDataManager?.contactsArray{
-        
+        if let currentDelegateContacts = coreDataManager?.contactsArray{
         //group the names by their first letter, to make table view loading much easier
-        firstCharToNameDict = Dictionary(grouping: currentContacts, by: {$0.first!})
+            firstCharToNameDict = Dictionary(grouping: currentDelegateContacts, by: { $0.firstName!.first! })
         }
         
     }
@@ -93,8 +94,8 @@ class ContactsViewController: UITableViewController {
         let cell = tableView.dequeueReusableCell(withIdentifier: "nameCell", for: indexPath)
         if let groupByPrefixDictionary = firstCharToNameDict {
             let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
-            if let sortedNames = groupByPrefixDictionary[key]?.sorted() {
-                cell.textLabel?.text = sortedNames[indexPath.row]
+            if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
+                cell.textLabel?.text = sortedContacts[indexPath.row].fullName
             }
             cell.imageView?.image = UIImage(named: "neutralProfile.png")
         }
@@ -102,8 +103,17 @@ class ContactsViewController: UITableViewController {
     }
     //when a row is selected, instantiate the profile view
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
+        print(indexPath.section, indexPath.row)
         if let profileVC = storyboard?.instantiateViewController(withIdentifier: "profileView") as? ProfileViewController{
-            profileVC.userProfile = User(firstName: "Jerry", lastName: "Wang", dateOfBirth: "8-17-1991", email: ["jerry.wang.ct@gmail.com"], phone: ["7814720251","2032312615","2033874366"], address: ["19 Cedar Acres Rd"])
+            if let groupByPrefixDictionary = firstCharToNameDict {
+                let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
+                if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
+                    profileVC.contactProfile = sortedContacts[indexPath.row]
+                }
+            }
+            
+            
+            //profileVC.contactProfile = User(firstName: "Jerry", lastName: "Wang", dateOfBirth: "8-17-1991", email: ["jerry.wang.ct@gmail.com"], phone: ["7814720251","2032312615","2033874366"], address: ["19 Cedar Acres Rd"])
             navigationController?.pushViewController(profileVC, animated: true)
         }
     }
@@ -112,11 +122,10 @@ class ContactsViewController: UITableViewController {
 extension ContactsViewController: NewContactDelegate {
     func createNew(contact: DelegateContact) {
         coreDataManager?.createNewContact(delegateContact: contact)
-        let newContactName = "\(contact.firstName ?? "no first name") \(contact.lastName ?? "no last name")"
-        //contactsArray.append(newContactName)
-        if firstCharToNameDict != nil, let firstChar = newContactName.first {
+        
+        if firstCharToNameDict != nil, let firstChar = contact.firstName?.first {
             var names = firstCharToNameDict?[firstChar] ?? []
-            names.append(newContactName)
+            names.append(contact)
             firstCharToNameDict?[firstChar] = names
         }
         self.tableView.reloadData()
