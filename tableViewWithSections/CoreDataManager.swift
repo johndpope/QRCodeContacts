@@ -31,8 +31,15 @@ class CoreDataManager {
     }
     
     //create user operation
-    func createNewContact(firstName: String, lastName: String) {
-        
+    func createNewContact(delegateContact: DelegateContact) {
+        print(
+        delegateContact.firstName ?? "nil first name",
+        delegateContact.lastName ?? "nil last name",
+        delegateContact.dob?.description ?? "nil dob",
+        delegateContact.address?.first ?? "nil address",
+        delegateContact.email?.first ?? "nil email",
+        delegateContact.phone?.first ?? "nil phone"
+        )
         
         let newContact = Contact(context: managedContext)
 //        let newAddress = Address(context: managedContext)
@@ -40,20 +47,12 @@ class CoreDataManager {
 //        let newPhone = Phone(context: managedContext)
 //        newAddress.street =  address
 //        newPhone.number = phoneNumber
-        newContact.firstName = firstName
-        newContact.lastName = lastName
-        //I chose to hash the Contact instance to provide a unique ID, rather than using a UUID, because UUID is not supported below iOS 11.0. Basically, I'd like more users and I also think hashing will disallow two contacts with the exact same properties from being saved to persistent store.
-        //newContact.uniqueID = Int32(newContact.hash)
-//        if address != nil {
-//            newUser.addToAddresses(newAddress)
-//        }
-//        newUser.addToEmail(newEmail)
-//        newUser.birthDate = dateOfBirth
-//        newUser.addToPhones(newPhone)
-//        newUser.uniqueID = UUID.init()
-        //contactsArray.append(newContact)
+        newContact.firstName = delegateContact.firstName
+        newContact.lastName = delegateContact.lastName
         
+        newContact.uniqueID = delegateContact.uniqueID
         
+
         saveContext()
     }
     
@@ -82,16 +81,16 @@ class CoreDataManager {
     }
     
     //update user operation
-    func updateContact(name: String, newFirst: Int, newLast: String){
+    func updateContact(oldContact: DelegateContact,newContact: DelegateContact){
         let request: NSFetchRequest<Contact> = Contact.fetchRequest()
         //find all users with the given name, update their age/email to new values
-        request.predicate = NSPredicate(format:"name = %@",name)
+        request.predicate = NSPredicate(format:"name = %@",oldContact.uniqueID)
         
         do {
-            let test = try managedContext.fetch(request)
-            if let validContact = test.first{
-                validContact.setValue(newFirst, forKey: "firstName")
-                validContact.setValue(newLast, forKey: "lastName")
+            let contactsInContext = try managedContext.fetch(request)
+            if let validContact = contactsInContext.first{
+                validContact.setValue(newContact.firstName, forKey: "firstName")
+                validContact.setValue(newContact.lastName, forKey: "lastName")
                 saveContext()
             }
         }catch {
@@ -101,15 +100,15 @@ class CoreDataManager {
     
     
     //delete user operation
-    func deleteContact(uniqueID: Int32){
+    func deleteContact(uniqueID: String){
         let request: NSFetchRequest<Contact> = Contact.fetchRequest()
         
         //ugh...have to fix unique id 
-        //request.predicate = NSPredicate(format: "uniqueID = %@", uniqueID as CVarArg)
+        request.predicate = NSPredicate(format: "uniqueID = %@", uniqueID)
         //find the first user with name and delete from managed context
         do {
-            let test = try managedContext.fetch(request)
-            if let validContact = test.first{
+            let contactsInContext = try managedContext.fetch(request)
+            if let validContact = contactsInContext.first{
                 managedContext.delete(validContact)
                 saveContext()
             }

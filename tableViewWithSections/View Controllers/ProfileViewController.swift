@@ -17,6 +17,8 @@ class ProfileViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+//        self.tableView.rowHeight = UITableView.automaticDimension
+//        self.tableView.estimatedRowHeight = 40
     }
 
     
@@ -47,52 +49,52 @@ class ProfileViewController: UITableViewController {
         }
     }
     
-    
-//    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
-//        if indexPath.section == Section.photo.rawValue && indexPath.row == 0 {
-//            return self.view.frame.width / 1.5
-//        } else {
-//            return UITableView.automaticDimension
-//        }
-//        return UITableView.automaticDimension
-//        switch indexPath.section{
-//            case Section.photo.rawValue : return self.view.frame.width / 1.5
-//        default: return UITableView.automaticDimension
-//        }
-
-//    }
+    override func tableView(_ tableView: UITableView, estimatedHeightForRowAt indexPath: IndexPath) -> CGFloat {
+        switch indexPath.section {
+            case Section.photo.rawValue: return 200
+            default: return 40
+        }
+    }
+    override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
+        if indexPath.section == Section.photo.rawValue && indexPath.row == 0 {
+            print("setting image cell width: ",self.view.frame.width / 1.5)
+            return self.view.frame.width / 1.5
+        } else {
+            return UITableView.automaticDimension
+        }
+    }
     
     //fill a cell with data, and return it
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         
-        let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
-        
         switch indexPath.section {
         case Section.photo.rawValue:
             let photoCell = tableView.dequeueReusableCell(withIdentifier: "imageCell", for: indexPath) as! ImageCell
-            photoCell.photoView.image = UIImage(named: "neutralProfile.png")
-            //clip photo with circular mask
-            let radiusOfCircularMask = photoCell.photoView.frame.width / 2.0
-            photoCell.photoView.layer.cornerRadius = radiusOfCircularMask
-            photoCell.photoView.layer.masksToBounds = true
+            photoCell.imageView?.image = UIImage(named: "neutralProfile.png")
             
             return photoCell
         case Section.name.rawValue:
+            let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
             singleEntryCell.textLabel?.text = "\(userProfile?.firstName ?? "") \(userProfile?.lastName ?? "")"
             return singleEntryCell
         case Section.dob.rawValue:
+            let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
             singleEntryCell.textLabel?.text = userProfile?.dateOfBirth
             return singleEntryCell
         case Section.phone.rawValue:
+            let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
             singleEntryCell.textLabel?.text = userProfile?.phone?[indexPath.row]
             return singleEntryCell
         case Section.email.rawValue:
+            let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
             singleEntryCell.textLabel?.text = userProfile?.email[indexPath.row]
             return singleEntryCell
         case Section.address.rawValue:
+            let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
             singleEntryCell.textLabel?.text = userProfile?.address[indexPath.row]
             return singleEntryCell
         default:
+            let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
             singleEntryCell.textLabel?.text = "radishes"
             return singleEntryCell
         }

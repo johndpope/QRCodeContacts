@@ -12,12 +12,17 @@ protocol NewContactDelegate: AnyObject {
     func createNew(contact: DelegateContact)
 }
 
-struct DelegateContact {
-    var firstName: String
-    var lastName: String
+struct DelegateContact: Hashable {
+    var firstName: String?
+    var lastName: String?
+    var dob: Date?
+    var phone: Set<Int>?
+    var email: Set<String>?
+    var address: Set<String>?
+    var uniqueID: String
 }
 
-class NewContactViewController: UIViewController, UITextFieldDelegate{
+class NewContactViewController: UIViewController{
     
     @IBOutlet weak var firstNameTextField: UITextField!
     
@@ -37,6 +42,8 @@ class NewContactViewController: UIViewController, UITextFieldDelegate{
     
     var delegate: NewContactDelegate?
     
+    var newContact: DelegateContact?
+    
     @IBOutlet weak var scrollView: UIScrollView!
     
     override func viewDidLoad() {
@@ -46,11 +53,13 @@ class NewContactViewController: UIViewController, UITextFieldDelegate{
         view.addGestureRecognizer(tapRecognizer)
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(dismissNewContactVC))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(saveContactTapped))
+        self.title = "New Contact"
         
         //add notifications
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name:UIResponder.keyboardWillShowNotification, object: nil);
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name:UIResponder.keyboardWillHideNotification, object: nil);
         
+        newContact = DelegateContact(firstName: nil, lastName: nil, dob: nil, phone: nil, email: nil, address: nil, uniqueID: UUID.init().uuidString)
     }
     
     deinit{
@@ -59,12 +68,12 @@ class NewContactViewController: UIViewController, UITextFieldDelegate{
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
     }
     
+    //move the scrollview up when the keyboard blocks the current text field
     //https://stackoverflow.com/questions/28813339/move-a-view-up-only-when-the-keyboard-covers-an-input-field
     @objc func keyboardWillShow(notification: NSNotification) {
-        //self.scrollView.isScrollEnabled = true
         var info = notification.userInfo!
         let keyboardSize = (info[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue.size
-        let contentInsets : UIEdgeInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardSize!.height + 20, right: 0.0)
+        let contentInsets : UIEdgeInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardSize!.height + 50, right: 0.0)
         
         self.scrollView.contentInset = contentInsets
         self.scrollView.scrollIndicatorInsets = contentInsets
@@ -92,17 +101,29 @@ class NewContactViewController: UIViewController, UITextFieldDelegate{
         view.endEditing(true)
     }
     
-    
+    //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
     @objc func saveContactTapped() {
-        //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong. 
         
-        //textFields?.forEach{ print("\($0.placeholder ?? "nil") : \($0.text ?? "")") }
+        newContact?.firstName = firstNameTextField.text
+        newContact?.lastName = lastNameTextField.text
+        if let phoneInput = phoneTextField.text{
+            newContact?.phone = Set([Int(phoneInput)]) as? Set<Int>
+        }
+        newContact?.email = Set([emailTextField.text]) as? Set<String>
+        newContact?.address = Set([addressTextField.text]) as? Set<String>
         
-        let delegateContact = DelegateContact(firstName: firstNameTextField.text ?? "", lastName: lastNameTextField.text ?? "")
-        delegate?.createNew(contact: delegateContact)
+        //only create a new contact if there is a first name and phone number
+        if let newContact = newContact,let _ = newContact.firstName, let _ = newContact.phone  {
+            delegate?.createNew(contact: newContact)
+        } else {
+            print("contact invalid!")
+        }
         dismissNewContactVC()
+        
     }
-    
+}
+
+extension NewContactViewController: UITextFieldDelegate{
     
     
     func setTextFieldDelegates(){
@@ -114,9 +135,30 @@ class NewContactViewController: UIViewController, UITextFieldDelegate{
         textField.resignFirstResponder()
         return true
     }
-    
+    ////if d.o.b field is selected, present a datepicker instead.
+    //courtesy Natalia Terlecka, https://stackoverflow.com/questions/11197855/iphone-display-date-picker-on-uitextfield-touch/11198489#11198489
     func textFieldDidBeginEditing(_ textField: UITextField) {
+        
         currentTextField = textField
+        if textField.placeholder == "date of birth"{
+            let datePicker = UIDatePicker()
+            datePicker.datePickerMode = .date
+            datePicker.addTarget(self, action: #selector(updateTextFieldWithDate(sender:)), for: .valueChanged)
+            textField.inputView = datePicker
+            textField.text = formatForView(date: datePicker.date)
+        }
+    }
+    //update the d.o.b text field with the date picked by the datepicker
+    @objc func updateTextFieldWithDate(sender: UIDatePicker){
+        dateOfBirthTextField.text = formatForView(date: sender.date)
+    }
+    
+    //given a Date object, return its string representation as MMM dd, yyyy
+    func formatForView(date: Date) -> String{
+        newContact?.dob = date
+        let formatter = DateFormatter()
+        formatter.dateFormat = "MMM dd,yyyy"
+        return formatter.string(from:date)
     }
     
     func textFieldDidEndEditing(_ textField: UITextField) {

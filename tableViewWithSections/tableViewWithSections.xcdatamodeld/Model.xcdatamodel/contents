@@ -3,8 +3,9 @@
     <entity name="Contact" representedClassName="Contact" syncable="YES" codeGenerationType="class">
         <attribute name="firstName" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="lastName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="uniqueID" optional="YES" attributeType="String" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Contact" positionX="-63" positionY="-18" width="128" height="75"/>
+        <element name="Contact" positionX="-63" positionY="-18" width="128" height="90"/>
     </elements>
 </model>
