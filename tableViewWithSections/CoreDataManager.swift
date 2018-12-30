@@ -45,7 +45,7 @@ class CoreDataManager {
         newContact.lastName = delegateContact.lastName
         newContact.address = delegateContact.address?.first
         newContact.email = delegateContact.email?.first
-        newContact.phone = Int64(delegateContact.phone!.first!)
+        newContact.phone = delegateContact.phone?.first
         newContact.dob = delegateContact.dob
         newContact.uniqueID = delegateContact.uniqueID
         
@@ -67,7 +67,7 @@ class CoreDataManager {
         } catch {
             print(error.localizedDescription)
         }
-        dump(contacts)
+        //dump(contacts)
         return contacts
     }
     

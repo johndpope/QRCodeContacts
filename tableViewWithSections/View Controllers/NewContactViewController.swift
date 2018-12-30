@@ -19,18 +19,18 @@ struct DelegateContact: Hashable {
         return self.firstName! + " " + (self.lastName ?? "")
     }
     var dob: Date?
-    var phone: Set<Int64>?
-    var email: Set<String>?
-    var address: Set<String>?
+    var phone: Array<String>?
+    var email: Array<String>?
+    var address: Array<String>?
     var uniqueID: String
     
     static func convertToDelegateContact(from contact: Contact) -> DelegateContact {
         let newDelegateContact = DelegateContact(firstName: contact.firstName,
             lastName: contact.lastName,
             dob: contact.dob,
-            phone: Set([contact.phone]),
-            email: Set([contact.email]) as? Set<String>,
-            address: Set([contact.address]) as? Set<String>,
+            phone: [contact.phone ?? "no phone value"],
+            email: [contact.email ?? "no email value"],
+            address: [contact.address ?? "no address value"],
             uniqueID: contact.uniqueID!)
         return newDelegateContact
     }
@@ -122,11 +122,11 @@ class NewContactViewController: UIViewController{
         
         newContact?.firstName = firstNameTextField.text
         newContact?.lastName = lastNameTextField.text
-        if let phoneInput = phoneTextField.text{
-            newContact?.phone = Set([Int64(phoneInput)]) as? Set<Int64>
-        }
-        newContact?.email = Set([emailTextField.text]) as? Set<String>
-        newContact?.address = Set([addressTextField.text]) as? Set<String>
+        
+        newContact?.phone = [phoneTextField.text ?? "no phone text"]
+        
+        newContact?.email = [emailTextField.text ?? "no email text"]
+        newContact?.address = [addressTextField.text ?? "no address text"]
         
         //only create a new contact if there is a first name and phone number
         if let newContact = newContact,let _ = newContact.firstName, let _ = newContact.phone  {

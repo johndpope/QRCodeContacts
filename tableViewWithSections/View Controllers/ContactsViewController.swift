@@ -9,15 +9,6 @@
 import UIKit
 import CoreData
 
-struct User {
-    let firstName: String
-    let lastName: String
-    let dateOfBirth: String
-    let email: [String]
-    let phone: [String]?
-    let address: [String]
-}
-
 class ContactsViewController: UITableViewController {
     //var headers = CharacterSet.letters
         
@@ -28,8 +19,6 @@ class ContactsViewController: UITableViewController {
     var firstCharToNameDict: [Character:[DelegateContact]]?
     
     private var coreDataManager: CoreDataManager?
-    
-    
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -47,15 +36,6 @@ class ContactsViewController: UITableViewController {
         }
         
     }
-    
-//    override func viewWillAppear(_ animated: Bool) {
-//        if let contacts = coreDataManager?.contactsArray {
-//            for contact in contacts {
-//                print(contact)
-//            }
-//        }
-//
-//    }
     
     @objc func addContactTapped(){
         if let newContactVC = storyboard?.instantiateViewController(withIdentifier: "newContact") as? NewContactViewController{
@@ -103,7 +83,7 @@ class ContactsViewController: UITableViewController {
     }
     //when a row is selected, instantiate the profile view
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
-        print(indexPath.section, indexPath.row)
+        
         if let profileVC = storyboard?.instantiateViewController(withIdentifier: "profileView") as? ProfileViewController{
             if let groupByPrefixDictionary = firstCharToNameDict {
                 let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
@@ -112,8 +92,6 @@ class ContactsViewController: UITableViewController {
                 }
             }
             
-            
-            //profileVC.contactProfile = User(firstName: "Jerry", lastName: "Wang", dateOfBirth: "8-17-1991", email: ["jerry.wang.ct@gmail.com"], phone: ["7814720251","2032312615","2033874366"], address: ["19 Cedar Acres Rd"])
             navigationController?.pushViewController(profileVC, animated: true)
         }
     }
