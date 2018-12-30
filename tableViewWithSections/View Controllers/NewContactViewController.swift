@@ -19,18 +19,26 @@ struct DelegateContact: Hashable {
         return self.firstName! + " " + (self.lastName ?? "")
     }
     var dob: Date?
-    var phone: Array<String>?
-    var email: Array<String>?
-    var address: Array<String>?
+    var phone: Array<String>
+    var email: Array<String>
+    var address: Array<String>
     var uniqueID: String
     
     static func convertToDelegateContact(from contact: Contact) -> DelegateContact {
+        let phoneBook = contact.phones?.map {
+            ($0 as! Phone).number } as! Array<String>
+        let emailBook = contact.emails?.map {
+            ($0 as! Email).address } as! Array<String>
+        
+        let addressBook = contact.addresses?.map {
+            ($0 as! Address).street } as! Array<String>
+        
         let newDelegateContact = DelegateContact(firstName: contact.firstName,
             lastName: contact.lastName,
             dob: contact.dob,
-            phone: [contact.phone ?? "no phone value"],
-            email: [contact.email ?? "no email value"],
-            address: [contact.address ?? "no address value"],
+            phone: phoneBook ,
+            email: emailBook,
+            address: addressBook,
             uniqueID: contact.uniqueID!)
         return newDelegateContact
     }
@@ -73,7 +81,7 @@ class NewContactViewController: UIViewController{
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name:UIResponder.keyboardWillShowNotification, object: nil);
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name:UIResponder.keyboardWillHideNotification, object: nil);
         
-        newContact = DelegateContact(firstName: nil, lastName: nil, dob: nil, phone: nil, email: nil, address: nil, uniqueID: UUID.init().uuidString)
+        newContact = DelegateContact(firstName: nil, lastName: nil, dob: nil, phone: [], email: [], address: [], uniqueID: UUID.init().uuidString)
     }
     
     deinit{
@@ -87,7 +95,7 @@ class NewContactViewController: UIViewController{
     //move the scrollview up when the keyboard blocks the current text field
     //https://stackoverflow.com/questions/28813339/move-a-view-up-only-when-the-keyboard-covers-an-input-field
     @objc func keyboardWillShow(notification: NSNotification) {
-        var info = notification.userInfo!
+        let info = notification.userInfo!
         let keyboardSize = (info[UIResponder.keyboardFrameBeginUserInfoKey] as? NSValue)?.cgRectValue.size
         let contentInsets : UIEdgeInsets = UIEdgeInsets(top: 0.0, left: 0.0, bottom: keyboardSize!.height + 50, right: 0.0)
         
@@ -123,13 +131,13 @@ class NewContactViewController: UIViewController{
         newContact?.firstName = firstNameTextField.text
         newContact?.lastName = lastNameTextField.text
         
-        newContact?.phone = [phoneTextField.text ?? "no phone text"]
+        newContact?.phone = [phoneTextField.text ?? "no phone recorded"]
         
-        newContact?.email = [emailTextField.text ?? "no email text"]
-        newContact?.address = [addressTextField.text ?? "no address text"]
+        newContact?.email = [emailTextField.text ?? "no email recorded"]
+        newContact?.address = [addressTextField.text ?? "no address recorded"]
         
         //only create a new contact if there is a first name and phone number
-        if let newContact = newContact,let _ = newContact.firstName, let _ = newContact.phone  {
+        if let newContact = newContact,let _ = newContact.firstName {
             delegate?.createNew(contact: newContact)
         } else {
             print("contact invalid!")

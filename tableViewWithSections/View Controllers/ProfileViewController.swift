@@ -13,12 +13,10 @@ enum Section: Int{
 }
 
 class ProfileViewController: UITableViewController {
-    var contactProfile: DelegateContact?
+    var contactProfile: DelegateContact!
     
     override func viewDidLoad() {
         super.viewDidLoad()
-//        self.tableView.rowHeight = UITableView.automaticDimension
-//        self.tableView.estimatedRowHeight = 40
         self.title = contactProfile?.fullName
         navigationItem.rightBarButtonItem = editButtonItem
         self.tableView.allowsSelectionDuringEditing = true
@@ -28,27 +26,33 @@ class ProfileViewController: UITableViewController {
         contactProfile = nil 
     }
     
-    
+    //insert "add phone/email/address" cell when editing, remove when done editing
     override func setEditing(_ editing: Bool, animated: Bool) {
         super.setEditing(editing, animated: animated)
         self.tableView.setEditing(editing, animated: true)
         
         if editing {
-            contactProfile?.address?.append("add new address")
-            contactProfile?.email?.append("add new email")
-            contactProfile?.phone?.append("add new phone")
             
-//            let phonePath = IndexPath(row: (contactProfile?.phone?.count ?? 0) - 1, section: Section.phone.rawValue)
-//            let emailPath = IndexPath(row: (contactProfile?.email?.count ?? 0) - 1, section: Section.email.rawValue)
-//            let addressPath = IndexPath(row: (contactProfile?.address?.count ?? 0) - 1, section: Section.address.rawValue)
+            contactProfile?.address.append("add new address")
+            contactProfile?.email.append("add new email")
+            contactProfile?.phone.append("add new phone")
             
-            self.tableView.insertRows(at: [IndexPath(row: 1, section: 3),IndexPath(row: 1, section: 4),IndexPath(row: 1, section: 5)], with: .left)
+            let phonePath = IndexPath(row: (contactProfile?.phone.count ?? 0) - 1, section: Section.phone.rawValue)
+            let emailPath = IndexPath(row: (contactProfile?.email.count ?? 0) - 1, section: Section.email.rawValue)
+            let addressPath = IndexPath(row: (contactProfile?.address.count ?? 0) - 1, section: Section.address.rawValue)
+            
+            self.tableView.insertRows(at: [phonePath,emailPath,addressPath], with: .left)
             
         } else {
-            contactProfile?.address?.removeLast()
-            contactProfile?.email?.removeLast()
-            contactProfile?.phone?.removeLast()
-            self.tableView.deleteRows(at: [IndexPath(row: 1, section: 3),IndexPath(row: 1, section: 4),IndexPath(row: 1, section: 5)], with: .right)
+            contactProfile?.address.removeLast()
+            contactProfile?.email.removeLast()
+            contactProfile?.phone.removeLast()
+            
+            let phonePath = IndexPath(row: (contactProfile?.phone.count ?? 0), section: Section.phone.rawValue)
+            let emailPath = IndexPath(row: (contactProfile?.email.count ?? 0), section: Section.email.rawValue)
+            let addressPath = IndexPath(row: (contactProfile?.address.count ?? 0), section: Section.address.rawValue)
+            
+            self.tableView.deleteRows(at: [phonePath,emailPath,addressPath], with: .right)
         }
     }
     
@@ -57,9 +61,9 @@ class ProfileViewController: UITableViewController {
         switch section {
             case Section.photo.rawValue,Section.dob.rawValue: return 1
             case Section.name.rawValue: return 0
-            case Section.phone.rawValue: return (contactProfile?.phone?.count ?? 0)
-            case Section.email.rawValue: return (contactProfile?.email?.count ?? 0)
-            case Section.address.rawValue: return (contactProfile?.address?.count ?? 0)
+            case Section.phone.rawValue: return (contactProfile?.phone.count ?? 0)
+            case Section.email.rawValue: return (contactProfile?.email.count ?? 0)
+            case Section.address.rawValue: return (contactProfile?.address.count ?? 0)
             default: return 0
         }
     }
@@ -109,10 +113,14 @@ class ProfileViewController: UITableViewController {
     
     //define editing style (+/-) for any cell when edit mode is active
     override func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
-        if indexPath.row == 0 {
+        if indexPath.section == Section.dob.rawValue { return .none }
+        
+        if indexPath.row + 1 < self.tableView(tableView, numberOfRowsInSection: indexPath.section) {
             return .delete
-        } else { return .none }
+        } else { return .insert }
     }
+    
+    
     
     //define actions when a row is selected, especially during editing mode
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
@@ -125,13 +133,11 @@ class ProfileViewController: UITableViewController {
     //photo section should have a calculated height, the other sections should have automatic height
     override func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         if indexPath.section == Section.photo.rawValue && indexPath.row == 0 {
-            //print("setting image cell width: ",self.view.frame.width / 1.5)
             return self.view.frame.width / 1.5
         } else {
             return UITableView.automaticDimension
         }
     }
-    
     
     
     //fill a cell with data, and return it
@@ -171,7 +177,6 @@ class ProfileViewController: UITableViewController {
             let addresses = Array((contactProfile?.address)!)
             singleEntryCell.textLabel?.text = addresses[indexPath.row]
             return singleEntryCell
-            
             
         default:
             let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell

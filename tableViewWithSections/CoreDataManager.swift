@@ -35,19 +35,30 @@ class CoreDataManager {
         delegateContact.firstName ?? "nil first name",
         delegateContact.lastName ?? "nil last name",
         delegateContact.dob?.description ?? "nil dob",
-        delegateContact.address?.first ?? "nil address",
-        delegateContact.email?.first ?? "nil email",
-        delegateContact.phone?.first ?? "nil phone"
+        delegateContact.address.first ?? "nil address",
+        delegateContact.email.first ?? "nil email",
+        delegateContact.phone.first ?? "nil phone"
         )
         
         let newContact = Contact(context: managedContext)
         newContact.firstName = delegateContact.firstName
         newContact.lastName = delegateContact.lastName
-        newContact.address = delegateContact.address?.first
-        newContact.email = delegateContact.email?.first
-        newContact.phone = delegateContact.phone?.first
         newContact.dob = delegateContact.dob
         newContact.uniqueID = delegateContact.uniqueID
+        
+        
+        let newAddress = Address(context: managedContext)
+        newAddress.street = delegateContact.address.first
+        let newEmail = Email(context: managedContext)
+        newEmail.address = delegateContact.email.first
+        let newPhone = Phone(context: managedContext)
+        newPhone.number = delegateContact.phone.first
+        
+        newContact.addToAddresses(newAddress)
+        newContact.addToEmails(newEmail)
+        newContact.addToPhones(newPhone)
+        
+        
         
         saveContext()
     }
