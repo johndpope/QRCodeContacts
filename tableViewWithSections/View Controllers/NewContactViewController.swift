@@ -9,38 +9,69 @@
 import UIKit
 
 protocol NewContactDelegate: AnyObject {
-    func createNew(contact: DelegateContact)
+    func createNew(contact: InterimContact)
+    func updateCurrentContact<T:Equatable>(uniqueID: String, field: DataField, oldValue: T, newValue: T)
+    func delete(value: String, from uniqueID: String, with field: DataField)
+    func add(value: String, from uniqueID: String, with field: DataField)
 }
 
-struct DelegateContact: Hashable {
-    var firstName: String?
-    var lastName: String?
+class InterimContact {
+    
+    var firstName: String
+    var lastName: String
     var fullName: String {
-        return self.firstName! + " " + (self.lastName ?? "")
+        return self.firstName + " " + self.lastName
     }
     var dob: Date?
-    var phone: Array<String>
-    var email: Array<String>
-    var address: Array<String>
+    var phone: Array<String> = []
+    var email: Array<String> = []
+    var address: Array<String> = []
     var uniqueID: String
     
-    static func convertToDelegateContact(from contact: Contact) -> DelegateContact {
-        let phoneBook = contact.phones?.map {
-            ($0 as! Phone).number } as! Array<String>
-        let emailBook = contact.emails?.map {
-            ($0 as! Email).address } as! Array<String>
+    init(firstName: String, lastName: String, uniqueID: String){
+        self.firstName = firstName
+        self.lastName = lastName
+        self.uniqueID = uniqueID
+    }
+    
+    static func convertToInterimContact(from contact: Contact) -> InterimContact {
+        var phoneNumbers = [String]()
+        if let phonebook = contact.phones{
+            for number in phonebook{
+                if let x = number as? Phone {
+                    phoneNumbers.append(x.number!)
+                }
+            }
+            //phoneNumbers = phonebook.filter{ ($0 as! Phone) != nil }.map { ($0 as! Phone).number! }
+        }
         
-        let addressBook = contact.addresses?.map {
-            ($0 as! Address).street } as! Array<String>
+        var emailAddresses = [String]()
+        if let emailbook = contact.emails{
+            for email in emailbook{
+                if let x = email as? Email {
+                    emailAddresses.append(x.address!)
+                }
+            }
+        }
+        print(emailAddresses)
+        var addressStreets = [String]()
+        if let addressbook = contact.addresses{
+            if addressbook.count > 0 {
+                addressStreets = addressbook.map { ($0 as! Address).street ?? ""  }
+            }
+        }
+//        let emailBook = contact.emails?.map {
+//            ($0 as? Email)?.address } as! Array<String>
+//
+//        let addressBook = contact.addresses?.map {
+//            ($0 as? Address)?.street } as! Array<String>
         
-        let newDelegateContact = DelegateContact(firstName: contact.firstName,
-            lastName: contact.lastName,
-            dob: contact.dob,
-            phone: phoneBook ,
-            email: emailBook,
-            address: addressBook,
-            uniqueID: contact.uniqueID!)
-        return newDelegateContact
+        let newInterimContact = InterimContact(firstName: contact.firstName!, lastName: contact.lastName!, uniqueID: contact.uniqueID!)
+        newInterimContact.dob = contact.dob
+        newInterimContact.phone = phoneNumbers
+        newInterimContact.email = emailAddresses
+        newInterimContact.address = addressStreets
+        return newInterimContact
     }
 }
 
@@ -64,7 +95,9 @@ class NewContactViewController: UIViewController{
     
     var delegate: NewContactDelegate?
     
-    var newContact: DelegateContact?
+    var newContact: InterimContact?
+    
+    var datePicker: Date?
     
     @IBOutlet weak var scrollView: UIScrollView!
     
@@ -80,8 +113,6 @@ class NewContactViewController: UIViewController{
         //add notifications
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillShow), name:UIResponder.keyboardWillShowNotification, object: nil);
         NotificationCenter.default.addObserver(self, selector: #selector(keyboardWillHide), name:UIResponder.keyboardWillHideNotification, object: nil);
-        
-        newContact = DelegateContact(firstName: nil, lastName: nil, dob: nil, phone: [], email: [], address: [], uniqueID: UUID.init().uuidString)
     }
     
     deinit{
@@ -127,20 +158,19 @@ class NewContactViewController: UIViewController{
     
     //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
     @objc func saveContactTapped() {
+        let newContact = InterimContact(firstName: firstNameTextField.text!, lastName: lastNameTextField.text!, uniqueID: UUID.init().uuidString)
+        if let validDate = datePicker {
+            newContact.dob = validDate
+        }
         
-        newContact?.firstName = firstNameTextField.text
-        newContact?.lastName = lastNameTextField.text
+        newContact.phone = (phoneTextField.text?.count)! > 0 ? [phoneTextField.text!] : [String]()
         
-        newContact?.phone = [phoneTextField.text ?? "no phone recorded"]
+        newContact.email = (emailTextField.text?.count)! > 0 ? [emailTextField.text!] : [String]()
+        newContact.address = (addressTextField.text?.count)! > 0 ? [addressTextField.text!] : [String]()
         
-        newContact?.email = [emailTextField.text ?? "no email recorded"]
-        newContact?.address = [addressTextField.text ?? "no address recorded"]
-        
-        //only create a new contact if there is a first name and phone number
-        if let newContact = newContact,let _ = newContact.firstName {
+        //only create a new contact if there is a first name
+        if newContact.firstName.count > 0 {
             delegate?.createNew(contact: newContact)
-        } else {
-            print("contact invalid!")
         }
         dismissNewContactVC()
         
@@ -179,7 +209,7 @@ extension NewContactViewController: UITextFieldDelegate{
     
     //given a Date object, return its string representation as MMM dd, yyyy
     func formatForView(date: Date) -> String{
-        newContact?.dob = date
+        datePicker = date
         let formatter = DateFormatter()
         formatter.dateFormat = "MMM dd,yyyy"
         return formatter.string(from:date)

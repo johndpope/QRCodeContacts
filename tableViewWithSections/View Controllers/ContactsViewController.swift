@@ -16,7 +16,7 @@ class ContactsViewController: UITableViewController {
     
     var sectionHeaderHeight = CGFloat(25)
     
-    var firstCharToNameDict: [Character:[DelegateContact]]?
+    var firstCharToNameDict: [Character:[InterimContact]]?
     
     private var coreDataManager: CoreDataManager?
     
@@ -30,9 +30,11 @@ class ContactsViewController: UITableViewController {
         coreDataManager = CoreDataManager(context: context)
         
         //get the existing contacts
-        if let currentDelegateContacts = coreDataManager?.contactsArray{
+        if let currentInterimContacts = coreDataManager?.contactsArray{
         //group the names by their first letter, to make table view loading much easier
-            firstCharToNameDict = Dictionary(grouping: currentDelegateContacts, by: { $0.firstName!.first! })
+            //dump(currentInterimContacts)"
+            
+            firstCharToNameDict = Dictionary(grouping: currentInterimContacts, by: { $0.firstName.first! })
         }
         
     }
@@ -89,6 +91,7 @@ class ContactsViewController: UITableViewController {
                 let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
                 if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
                     profileVC.contactProfile = sortedContacts[indexPath.row]
+                    profileVC.delegate = self
                 }
             }
             
@@ -98,14 +101,25 @@ class ContactsViewController: UITableViewController {
 }
 
 extension ContactsViewController: NewContactDelegate {
-    func createNew(contact: DelegateContact) {
-        coreDataManager?.createNewContact(delegateContact: contact)
+    func updateCurrentContact<T: Equatable>(uniqueID: String, field: DataField, oldValue: T, newValue: T) {
+        coreDataManager?.updateCurrentContact(uniqueID: uniqueID, field: field, oldValue: oldValue, newValue: newValue)
+    }
+    
+    func createNew(contact: InterimContact) {
+        coreDataManager?.createNewContact(from: contact)
         
-        if firstCharToNameDict != nil, let firstChar = contact.firstName?.first {
-            var names = firstCharToNameDict?[firstChar] ?? []
+        if firstCharToNameDict != nil{
+            let firstChar = contact.firstName.first
+            var names = firstCharToNameDict?[firstChar!] ?? []
             names.append(contact)
-            firstCharToNameDict?[firstChar] = names
+            firstCharToNameDict?[firstChar!] = names
         }
         self.tableView.reloadData()
+    }
+    func delete(value: String, from uniqueID: String, with field: DataField){
+        coreDataManager?.delete(value: value, from: uniqueID, with: field)
+    }
+    func add(value: String, from uniqueID: String, with field: DataField){
+        coreDataManager?.add(value: value, from: uniqueID, with: field)
     }
 }

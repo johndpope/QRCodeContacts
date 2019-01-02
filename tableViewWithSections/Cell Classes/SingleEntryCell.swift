@@ -10,4 +10,14 @@ import UIKit
 
 class SingleEntryCell: UITableViewCell {
     
+    @IBOutlet weak var textField: UITextField!
+    
+    override func setEditing(_ editing: Bool, animated: Bool) {
+        super.setEditing(editing, animated: animated)
+        if editing {
+            self.textField.isUserInteractionEnabled = true
+        } else {
+            self.textField.isUserInteractionEnabled = false 
+        }
+    }
 }
