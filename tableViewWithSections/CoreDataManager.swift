@@ -201,23 +201,23 @@ class CoreDataManager {
     }
     
     
-//    //delete user operation
-//    func delete(contact: InterimContact){
-//        let request: NSFetchRequest<Contact> = Contact.fetchRequest()
-//
-//        //ugh...have to fix unique id
-//        request.predicate = NSPredicate(format: "uniqueID = %@", contact.uniqueID)
-//        //find the first user with name and delete from managed context
-//        do {
-//            let contactsInContext = try managedContext.fetch(request)
-//            if let validContact = contactsInContext.first{
-//                managedContext.delete(validContact)
-//                saveContext()
-//            }
-//        }catch {
-//            print(error.localizedDescription)
-//        }
-//    }
+    //delete user operation
+    func delete(contact: Contact){
+        let request: NSFetchRequest<Contact> = Contact.fetchRequest()
+
+        //ugh...have to fix unique id
+        request.predicate = NSPredicate(format: "uniqueID = %@", contact.uniqueID!)
+        //find the first user with name and delete from managed context
+        do {
+            let contactsInContext = try managedContext.fetch(request)
+            if let validContact = contactsInContext.first{
+                managedContext.delete(validContact)
+                saveContext()
+            }
+        }catch {
+            print(error.localizedDescription)
+        }
+    }
     
 }
 

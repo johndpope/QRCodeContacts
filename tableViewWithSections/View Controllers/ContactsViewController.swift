@@ -72,7 +72,29 @@ class ContactsViewController: UITableViewController {
         }
         return 0
     }
+    //can edit all rows
+    override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
+        return true
+    }
     
+    //define deletion behavior when user swipes right on a cell to delete a contact
+    override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
+        if editingStyle == .delete{
+            if let groupByPrefixDictionary = firstCharToContactsDict {
+                let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
+                var sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } )
+
+                coreDataManager?.delete(contact: (sortedContacts?[indexPath.row])!)
+                sortedContacts?.remove(at: indexPath.row)
+                if (sortedContacts?.count)! > 0 {
+                    firstCharToContactsDict?[key] = sortedContacts
+                } else {
+                    firstCharToContactsDict?[key] = nil
+                }
+                tableView.reloadData()
+            }
+        }
+    }
     //define what data appears in each cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "nameCell", for: indexPath)

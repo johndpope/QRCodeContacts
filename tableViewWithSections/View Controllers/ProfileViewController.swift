@@ -217,6 +217,7 @@ class ProfileViewController: UITableViewController {
     func createSingleEntryCell(with text: String, in indexPath: IndexPath)-> SingleEntryCell{
         let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
         singleEntryCell.textField.text = text
+        singleEntryCell.textField.autocorrectionType = .no
         singleEntryCell.textField.delegate = self
         return singleEntryCell
     }
