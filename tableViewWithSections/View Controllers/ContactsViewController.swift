@@ -9,14 +9,15 @@
 import UIKit
 import CoreData
 
+protocol UpdateHomeScreenDelegate: AnyObject {
+    func addContactToDataSource(contact: Contact)
+}
+
 class ContactsViewController: UITableViewController {
-    //var headers = CharacterSet.letters
-        
-    var headers = ["A","B","C","D","E","F","G","H","I","J", "K","L","M", "N","O","P","Q","R","S","T","U","V","W","X","Y","Z"]
     
     var sectionHeaderHeight = CGFloat(25)
     
-    var firstCharToNameDict: [Character:[InterimContact]]?
+    var firstCharToContactsDict: [Character:[Contact]]?
     
     private var coreDataManager: CoreDataManager?
     
@@ -34,13 +35,14 @@ class ContactsViewController: UITableViewController {
         //group the names by their first letter, to make table view loading much easier
             //dump(currentInterimContacts)"
             
-            firstCharToNameDict = Dictionary(grouping: currentInterimContacts, by: { $0.firstName.first! })
+            firstCharToContactsDict = Dictionary(grouping: currentInterimContacts, by: { ($0.firstName?.first!)! })
         }
         
     }
     
     @objc func addContactTapped(){
         if let newContactVC = storyboard?.instantiateViewController(withIdentifier: "newContact") as? NewContactViewController{
+            newContactVC.managedContext = coreDataManager?.managedContext
             newContactVC.delegate = self
             navigationController?.pushViewController(newContactVC, animated: true)
         }
@@ -48,7 +50,7 @@ class ContactsViewController: UITableViewController {
 
     //return total number of sections in the tableview
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return firstCharToNameDict?.keys.count ?? 0
+        return firstCharToContactsDict?.keys.count ?? 0
     }
     
     //return height for section
@@ -58,13 +60,13 @@ class ContactsViewController: UITableViewController {
     
     //return title for the section
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if let sectionKeys = firstCharToNameDict?.keys.sorted(){
+        if let sectionKeys = firstCharToContactsDict?.keys.sorted(){
             return String(sectionKeys[section])
         } else { return nil }
     }
     //return number of rows for every section (i.e number of names per prefix)
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let groupByPrefixDictionary = firstCharToNameDict{
+        if let groupByPrefixDictionary = firstCharToContactsDict{
             let key = groupByPrefixDictionary.keys.sorted()[section]
             return (groupByPrefixDictionary[key]?.count ?? 0)
         }
@@ -74,10 +76,11 @@ class ContactsViewController: UITableViewController {
     //define what data appears in each cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "nameCell", for: indexPath)
-        if let groupByPrefixDictionary = firstCharToNameDict {
+        if let groupByPrefixDictionary = firstCharToContactsDict {
             let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
             if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
-                cell.textLabel?.text = sortedContacts[indexPath.row].fullName
+                
+                cell.textLabel?.text =  sortedContacts[indexPath.row].fullName
             }
             cell.imageView?.image = UIImage(named: "neutralProfile.png")
         }
@@ -87,11 +90,11 @@ class ContactsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         if let profileVC = storyboard?.instantiateViewController(withIdentifier: "profileView") as? ProfileViewController{
-            if let groupByPrefixDictionary = firstCharToNameDict {
+            if let groupByPrefixDictionary = firstCharToContactsDict {
                 let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
                 if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
                     profileVC.contactProfile = sortedContacts[indexPath.row]
-                    profileVC.delegate = self
+                    profileVC.coreDataManager = coreDataManager
                 }
             }
             
@@ -100,26 +103,17 @@ class ContactsViewController: UITableViewController {
     }
 }
 
-extension ContactsViewController: NewContactDelegate {
-    func updateCurrentContact<T: Equatable>(uniqueID: String, field: DataField, oldValue: T, newValue: T) {
-        coreDataManager?.updateCurrentContact(uniqueID: uniqueID, field: field, oldValue: oldValue, newValue: newValue)
-    }
-    
-    func createNew(contact: InterimContact) {
-        coreDataManager?.createNewContact(from: contact)
-        
-        if firstCharToNameDict != nil{
-            let firstChar = contact.firstName.first
-            var names = firstCharToNameDict?[firstChar!] ?? []
-            names.append(contact)
-            firstCharToNameDict?[firstChar!] = names
-        }
-        self.tableView.reloadData()
-    }
-    func delete(value: String, from uniqueID: String, with field: DataField){
-        coreDataManager?.delete(value: value, from: uniqueID, with: field)
-    }
-    func add(value: String, from uniqueID: String, with field: DataField){
-        coreDataManager?.add(value: value, from: uniqueID, with: field)
+
+extension ContactsViewController: UpdateHomeScreenDelegate {
+    func addContactToDataSource(contact: Contact) {
+        if let firstChar = contact.firstName?.first {
+            var contacts = self.firstCharToContactsDict?[firstChar] ?? []
+            contacts.append(contact)
+            firstCharToContactsDict?[firstChar] = contacts
+            
+            self.tableView.reloadData()
+        } else {
+            print("contact does not have a first name?!")
+        }        
     }
 }

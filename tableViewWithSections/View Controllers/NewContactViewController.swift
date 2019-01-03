@@ -7,73 +7,7 @@
 //
 
 import UIKit
-
-protocol NewContactDelegate: AnyObject {
-    func createNew(contact: InterimContact)
-    func updateCurrentContact<T:Equatable>(uniqueID: String, field: DataField, oldValue: T, newValue: T)
-    func delete(value: String, from uniqueID: String, with field: DataField)
-    func add(value: String, from uniqueID: String, with field: DataField)
-}
-
-class InterimContact {
-    
-    var firstName: String
-    var lastName: String
-    var fullName: String {
-        return self.firstName + " " + self.lastName
-    }
-    var dob: Date?
-    var phone: Array<String> = []
-    var email: Array<String> = []
-    var address: Array<String> = []
-    var uniqueID: String
-    
-    init(firstName: String, lastName: String, uniqueID: String){
-        self.firstName = firstName
-        self.lastName = lastName
-        self.uniqueID = uniqueID
-    }
-    
-    static func convertToInterimContact(from contact: Contact) -> InterimContact {
-        var phoneNumbers = [String]()
-        if let phonebook = contact.phones{
-            for number in phonebook{
-                if let x = number as? Phone {
-                    phoneNumbers.append(x.number!)
-                }
-            }
-            //phoneNumbers = phonebook.filter{ ($0 as! Phone) != nil }.map { ($0 as! Phone).number! }
-        }
-        
-        var emailAddresses = [String]()
-        if let emailbook = contact.emails{
-            for email in emailbook{
-                if let x = email as? Email {
-                    emailAddresses.append(x.address!)
-                }
-            }
-        }
-        print(emailAddresses)
-        var addressStreets = [String]()
-        if let addressbook = contact.addresses{
-            if addressbook.count > 0 {
-                addressStreets = addressbook.map { ($0 as! Address).street ?? ""  }
-            }
-        }
-//        let emailBook = contact.emails?.map {
-//            ($0 as? Email)?.address } as! Array<String>
-//
-//        let addressBook = contact.addresses?.map {
-//            ($0 as? Address)?.street } as! Array<String>
-        
-        let newInterimContact = InterimContact(firstName: contact.firstName!, lastName: contact.lastName!, uniqueID: contact.uniqueID!)
-        newInterimContact.dob = contact.dob
-        newInterimContact.phone = phoneNumbers
-        newInterimContact.email = emailAddresses
-        newInterimContact.address = addressStreets
-        return newInterimContact
-    }
-}
+import CoreData
 
 class NewContactViewController: UIViewController{
     
@@ -93,11 +27,11 @@ class NewContactViewController: UIViewController{
     
     var textFields: [UITextField]?
     
-    var delegate: NewContactDelegate?
-    
-    var newContact: InterimContact?
-    
     var datePicker: Date?
+    
+    var managedContext: NSManagedObjectContext?
+    
+    var delegate: UpdateHomeScreenDelegate?
     
     @IBOutlet weak var scrollView: UIScrollView!
     
@@ -119,8 +53,6 @@ class NewContactViewController: UIViewController{
         //remove notifications
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillShowNotification, object: nil)
         NotificationCenter.default.removeObserver(self, name: UIResponder.keyboardWillHideNotification, object: nil)
-        newContact = nil
-        delegate = nil
     }
     
     //move the scrollview up when the keyboard blocks the current text field
@@ -158,19 +90,41 @@ class NewContactViewController: UIViewController{
     
     //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
     @objc func saveContactTapped() {
-        let newContact = InterimContact(firstName: firstNameTextField.text!, lastName: lastNameTextField.text!, uniqueID: UUID.init().uuidString)
-        if let validDate = datePicker {
-            newContact.dob = validDate
-        }
-        
-        newContact.phone = (phoneTextField.text?.count)! > 0 ? [phoneTextField.text!] : [String]()
-        
-        newContact.email = (emailTextField.text?.count)! > 0 ? [emailTextField.text!] : [String]()
-        newContact.address = (addressTextField.text?.count)! > 0 ? [addressTextField.text!] : [String]()
-        
-        //only create a new contact if there is a first name
-        if newContact.firstName.count > 0 {
-            delegate?.createNew(contact: newContact)
+        if let managedContext = managedContext{
+            let newContact = Contact(context: managedContext)
+            newContact.firstName = firstNameTextField.text!
+            newContact.lastName = lastNameTextField.text!
+            newContact.uniqueID = UUID.init().uuidString
+            
+            if let validDate = datePicker {
+                newContact.dob = validDate
+            }
+            
+            let newPhone = Phone(context: managedContext)
+            if (phoneTextField.text?.count)! > 0{
+                newPhone.number = phoneTextField.text
+                newPhone.contact = newContact
+            }
+            
+            let newEmail = Email(context: managedContext)
+            if (emailTextField.text?.count)! > 0 {
+                newEmail.address = emailTextField.text
+                newEmail.contact = newContact
+            }
+            
+            let newAddress = Address(context: managedContext)
+            if (addressTextField.text?.count)! > 0 {
+                newAddress.street = addressTextField.text
+                newAddress.contact = newContact
+            }
+           
+            
+            do {
+                try managedContext.save()
+                delegate?.addContactToDataSource(contact: newContact)
+            } catch {
+                print(error.localizedDescription)
+            }
         }
         dismissNewContactVC()
         
