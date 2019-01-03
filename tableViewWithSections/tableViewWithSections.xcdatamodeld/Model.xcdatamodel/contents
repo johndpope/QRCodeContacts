@@ -8,6 +8,7 @@
         <attribute name="dob" optional="YES" attributeType="Date" usesScalarValueType="NO" syncable="YES"/>
         <attribute name="firstName" optional="YES" attributeType="String" syncable="YES"/>
         <attribute name="lastName" optional="YES" attributeType="String" syncable="YES"/>
+        <attribute name="profilePicture" optional="YES" attributeType="Binary" allowsExternalBinaryDataStorage="YES" syncable="YES"/>
         <attribute name="uniqueID" optional="YES" attributeType="String" syncable="YES"/>
         <relationship name="addresses" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Address" inverseName="contact" inverseEntity="Address" syncable="YES"/>
         <relationship name="emails" optional="YES" toMany="YES" deletionRule="Cascade" destinationEntity="Email" inverseName="contact" inverseEntity="Email" syncable="YES"/>
@@ -22,9 +23,9 @@
         <relationship name="contact" optional="YES" maxCount="1" deletionRule="Nullify" destinationEntity="Contact" inverseName="phones" inverseEntity="Contact" syncable="YES"/>
     </entity>
     <elements>
-        <element name="Contact" positionX="-681.1171875" positionY="48.1796875" width="128" height="148"/>
-        <element name="Phone" positionX="-312.671875" positionY="-32.18359375" width="128" height="73"/>
         <element name="Address" positionX="-207.96875" positionY="211.24609375" width="128" height="73"/>
+        <element name="Contact" positionX="-681.1171875" positionY="48.1796875" width="128" height="165"/>
         <element name="Email" positionX="-98.9609375" positionY="343.671875" width="128" height="73"/>
+        <element name="Phone" positionX="-312.671875" positionY="-32.18359375" width="128" height="73"/>
     </elements>
 </model>

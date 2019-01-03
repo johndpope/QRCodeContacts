@@ -29,6 +29,8 @@ class NewContactViewController: UIViewController, UINavigationControllerDelegate
     
     @IBOutlet weak var imageView: UIImageView!
     
+    var profilePicture: UIImage?
+    
     var datePicker: Date?
     
     var managedContext: NSManagedObjectContext?
@@ -161,6 +163,9 @@ class NewContactViewController: UIViewController, UINavigationControllerDelegate
                 newAddress.contact = newContact
             }
            
+            if let validPicture = profilePicture {
+                newContact.profilePicture = UIImage.pngData(validPicture)()
+            }
             
             do {
                 try managedContext.save()
@@ -225,9 +230,7 @@ extension NewContactViewController: UIImagePickerControllerDelegate {
             return
         }
         imageView.image = image
-        if #available(iOS 11.0, *) {
-            let url = info[.imageURL]
-            print(image.size, url as Any)
-        }
+        print(image.size)
+        profilePicture = image
     }
 }

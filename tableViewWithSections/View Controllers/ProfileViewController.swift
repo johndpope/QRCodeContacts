@@ -20,6 +20,8 @@ class ProfileViewController: UITableViewController {
     var contactEmails = [String]()
     var contactAddresses = [String]()
     
+    var currentProfilePictureView: UIImageView?
+    
     var currentTextField: UITextField?
     var currentText: String?
     var datePickerValue: Date?
@@ -49,11 +51,13 @@ class ProfileViewController: UITableViewController {
         self.tableView.setEditing(editing, animated: true)
         
         if editing {
+            currentProfilePictureView?.isUserInteractionEnabled = true
             contactAddresses.insert("add new address", at: 0)
             contactEmails.insert("add new email", at: 0)
             contactPhones.insert("add new phone", at: 0)
             self.tableView.insertRows(at: [IndexPath(row: 0, section: Section.phone.rawValue),IndexPath(row: 0, section: Section.email.rawValue),IndexPath(row: 0, section: Section.address.rawValue)], with: .left)
         } else {
+            currentProfilePictureView?.isUserInteractionEnabled = false
             contactAddresses.removeFirst()
             contactEmails.removeFirst()
             contactPhones.removeFirst()
@@ -97,24 +101,22 @@ class ProfileViewController: UITableViewController {
     //define the edit action for a cell 
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
         if editingStyle == .delete {
-            
-            
             if let coreDataManager = coreDataManager, let id = contactProfile?.uniqueID{
                 switch indexPath.section{
-                    
+                
                 case Section.phone.rawValue:
                     coreDataManager.delete(value: contactPhones[indexPath.row], from: id, with: DataField.Phone)
-                    print("deleting phone ",contactPhones[indexPath.row])
+                    
                     contactPhones.remove(at: indexPath.row)
 
                 case Section.email.rawValue:
                     coreDataManager.delete(value: contactEmails[indexPath.row], from: id, with: DataField.Email)
-                    print("deleting email ",contactEmails[indexPath.row])
+                    
                     contactEmails.remove(at: indexPath.row)
 
                 case Section.address.rawValue:
                     coreDataManager.delete(value: contactAddresses[indexPath.row], from: id, with: DataField.Address)
-                    print("deleting address",contactAddresses[indexPath.row])
+                    
                     contactAddresses.remove(at: indexPath.row)
 
                 default: break
@@ -127,14 +129,12 @@ class ProfileViewController: UITableViewController {
     //define which rows are editable
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
         switch indexPath.section {
-            case Section.dob.rawValue:
+        case Section.photo.rawValue:
+            return indexPath.row == 0 ? true : false
+        case Section.dob.rawValue:
                 return true
             case Section.phone.rawValue,Section.email.rawValue,Section.address.rawValue:
-                if indexPath.row == 0 && tableView.isEditing {
-                    return false
-                } else {
-                    return true
-                }
+                return indexPath.row == 0 && tableView.isEditing ? false : true
             default: return false
         }
     }
@@ -154,10 +154,15 @@ class ProfileViewController: UITableViewController {
     //define actions when a row is selected, especially during editing mode
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView.isEditing == true {
-            if indexPath.section >= Section.phone.rawValue && indexPath.row == 0 {
+            if indexPath.section == Section.photo.rawValue && indexPath.row == 0{
+                
+            }
+            
+            else if indexPath.section >= Section.phone.rawValue && indexPath.row == 0 {
                 var count = 0
                 let emptyString = ""
                 switch indexPath.section{
+
                 case Section.phone.rawValue:
                     contactPhones.append(emptyString)
                     count = contactPhones.count - 1
@@ -191,14 +196,31 @@ class ProfileViewController: UITableViewController {
         switch indexPath.section {
         case Section.photo.rawValue:
             let photoCell = tableView.dequeueReusableCell(withIdentifier: "imageCell", for: indexPath) as! ImageCell
-            photoCell.imageView?.image = UIImage(named: "neutralProfile.png")
+            let imageTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(setProfilePicture))
+            
+            photoCell.imageView?.isUserInteractionEnabled = false
+            photoCell.imageView?.addGestureRecognizer(imageTapRecognizer)
+            //photoCell.imageView?.contentMode = .scaleAspectFill
+            currentProfilePictureView = photoCell.imageView
+            
+            if let validPicture = contactProfile?.profilePicture{
+                photoCell.imageView?.image = UIImage(data: validPicture)
+            } else {
+                photoCell.imageView?.image = UIImage(named: "neutralProfile.png")
+            }
             return photoCell
         case Section.name.rawValue:
             let text = "\(contactProfile?.firstName ?? "") \(contactProfile?.lastName ?? "")"
             return createSingleEntryCell(with: text, in: indexPath)
         case Section.dob.rawValue:
-            let text = contactProfile?.dob?.description ?? ""
-            return createSingleEntryCell(with: text, in: indexPath)
+            
+            if let validDate = contactProfile?.dob{
+                let text = formatForView(date: validDate)
+                return createSingleEntryCell(with: text, in: indexPath)
+            } else {
+                return createSingleEntryCell(with: "", in: indexPath)
+            }
+            
         case Section.phone.rawValue:
             let phone = contactPhones[indexPath.row]
             return createSingleEntryCell(with: phone, in: indexPath)
@@ -254,7 +276,7 @@ extension ProfileViewController: UITextFieldDelegate{
     func formatForView(date: Date) -> String{
         datePickerValue = date
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM dd,yyyy"
+        formatter.dateFormat = "MMM d, yyyy"
         return formatter.string(from:date)
     }
     
@@ -325,3 +347,48 @@ extension ProfileViewController: UITextFieldDelegate{
     }
 }
 
+extension ProfileViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true)
+        guard let image = info[.editedImage] as? UIImage else {
+            return
+        }
+        let imageData = UIImage.pngData(image)()
+        contactProfile?.profilePicture = imageData
+        coreDataManager?.saveContext()
+        tableView.reloadSections(IndexSet([Section.photo.rawValue]), with: .automatic)
+    }
+    
+    @objc func setProfilePicture(){
+        let alertVC = UIAlertController(title: nil, message: "Pick a profile picture", preferredStyle: .alert)
+        let cameraAction = UIAlertAction(title: "Camera", style: .default, handler: takePhoto)
+        let photoLibraryAction = UIAlertAction(title: "Photos Library", style: .default, handler: pickPhoto)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alertVC.addAction(cameraAction)
+        alertVC.addAction(photoLibraryAction)
+        alertVC.addAction(cancelAction)
+        
+        //popover presentation is used on iPads to specify origin of alertVC popup.
+        alertVC.popoverPresentationController?.sourceView = self.view
+        alertVC.popoverPresentationController?.sourceRect = self.tableView.frame
+        
+        present(alertVC, animated: true)
+    }
+    
+    func takePhoto(action: UIAlertAction){
+        let vc = UIImagePickerController()
+        vc.sourceType = .camera
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc, animated: true)
+    }
+    
+    
+    func pickPhoto(action: UIAlertAction){
+        let vc = UIImagePickerController()
+        vc.sourceType = .photoLibrary
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc,animated: true)
+    }
+}

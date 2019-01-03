@@ -39,6 +39,11 @@ class ContactsViewController: UITableViewController {
         }
         
     }
+    //refresh the tableview after returning from either the profile or new contact view. 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        self.tableView.reloadData()
+    }
     
     @objc func addContactTapped(){
         if let newContactVC = storyboard?.instantiateViewController(withIdentifier: "newContact") as? NewContactViewController{
@@ -103,8 +108,12 @@ class ContactsViewController: UITableViewController {
             if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
                 
                 cell.textLabel?.text =  sortedContacts[indexPath.row].fullName
+                if let validPicture = sortedContacts[indexPath.row].profilePicture {
+                    cell.imageView?.image = UIImage(data: validPicture)
+                }else{
+                    cell.imageView?.image = UIImage(named: "neutralProfile.png")
+                }
             }
-            cell.imageView?.image = UIImage(named: "neutralProfile.png")
         }
         return cell
     }

@@ -219,6 +219,9 @@ class CoreDataManager {
         }
     }
     
+    
+    
+    
 }
 
 extension Contact {

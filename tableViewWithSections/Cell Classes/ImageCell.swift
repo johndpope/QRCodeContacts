@@ -9,6 +9,7 @@
 import UIKit
 
 class ImageCell: UITableViewCell {
+    
     override func layoutSubviews() {
         super.layoutSubviews()
         //center the image
