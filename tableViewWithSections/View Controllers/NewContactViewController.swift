@@ -9,7 +9,7 @@
 import UIKit
 import CoreData
 
-class NewContactViewController: UIViewController{
+class NewContactViewController: UIViewController, UINavigationControllerDelegate{
     
     @IBOutlet weak var firstNameTextField: UITextField!
     
@@ -27,6 +27,8 @@ class NewContactViewController: UIViewController{
     
     var textFields: [UITextField]?
     
+    @IBOutlet weak var imageView: UIImageView!
+    
     var datePicker: Date?
     
     var managedContext: NSManagedObjectContext?
@@ -38,8 +40,16 @@ class NewContactViewController: UIViewController{
     override func viewDidLoad() {
         super.viewDidLoad()
         setTextFieldDelegates()
-        let tapRecognizer = UITapGestureRecognizer(target: self, action: #selector(keyboardDismissTapped))
-        view.addGestureRecognizer(tapRecognizer)
+        
+        //tapping outside of keyboard causes dismissal
+        let keyboardTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(keyboardDismissTapped))
+        view.addGestureRecognizer(keyboardTapRecognizer)
+        
+        //tapping on imageview prompts image picker
+        let imageTapRecognizer = UITapGestureRecognizer(target: self, action: #selector(setProfilePicture))
+        imageView.isUserInteractionEnabled = true
+        imageView.addGestureRecognizer(imageTapRecognizer)
+        
         navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .cancel, target: self, action: #selector(dismissNewContactVC))
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .save, target: self, action: #selector(saveContactTapped))
         self.title = "New Contact"
@@ -86,6 +96,39 @@ class NewContactViewController: UIViewController{
     
     @objc func keyboardDismissTapped(){
         view.endEditing(true)
+    }
+    
+    @objc func setProfilePicture(){
+        let alertVC = UIAlertController(title: nil, message: "Pick a profile picture", preferredStyle: .alert)
+        let cameraAction = UIAlertAction(title: "Camera", style: .default, handler: takePhoto)
+        let photoLibraryAction = UIAlertAction(title: "Photos Library", style: .default, handler: pickPhoto)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alertVC.addAction(cameraAction)
+        alertVC.addAction(photoLibraryAction)
+        alertVC.addAction(cancelAction)
+        
+        //popover presentation is used on iPads to specify origin of alertVC popup.
+        alertVC.popoverPresentationController?.sourceView = self.view
+        alertVC.popoverPresentationController?.sourceRect = imageView.frame
+        
+        present(alertVC, animated: true)
+    }
+    
+    func takePhoto(action: UIAlertAction){
+        let vc = UIImagePickerController()
+        vc.sourceType = .camera
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc, animated: true)
+    }
+    
+    
+    func pickPhoto(action: UIAlertAction){
+        let vc = UIImagePickerController()
+        vc.sourceType = .photoLibrary
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc,animated: true)
     }
     
     //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
@@ -173,4 +216,18 @@ extension NewContactViewController: UITextFieldDelegate{
         currentTextField = nil
     }
     
+}
+
+extension NewContactViewController: UIImagePickerControllerDelegate {
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true)
+        guard let image = info[.editedImage] as? UIImage else {
+            return
+        }
+        imageView.image = image
+        if #available(iOS 11.0, *) {
+            let url = info[.imageURL]
+            print(image.size, url as Any)
+        }
+    }
 }

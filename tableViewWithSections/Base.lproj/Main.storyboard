@@ -198,6 +198,7 @@
                         <outlet property="dateOfBirthTextField" destination="gB2-pD-BvZ" id="3RZ-e5-eWJ"/>
                         <outlet property="emailTextField" destination="Va8-Y1-ypR" id="kkL-WZ-QEL"/>
                         <outlet property="firstNameTextField" destination="EjJ-NV-fWZ" id="sHn-25-jjF"/>
+                        <outlet property="imageView" destination="6TQ-Iw-noc" id="eL5-Vf-bBj"/>
                         <outlet property="lastNameTextField" destination="1AO-nz-ZjB" id="hzB-Lj-YMc"/>
                         <outlet property="phoneTextField" destination="Mrm-uB-qdg" id="PEm-Ey-CB8"/>
                         <outlet property="scrollView" destination="RR7-TN-iGQ" id="8j3-hk-nFy"/>
