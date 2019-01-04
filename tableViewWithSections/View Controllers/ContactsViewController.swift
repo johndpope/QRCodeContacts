@@ -19,7 +19,11 @@ class ContactsViewController: UITableViewController {
     
     var firstCharToContactsDict: [Character:[Contact]]?
     
+    var filteredContactsDict = [Character: [Contact]]()
+    
     private var coreDataManager: CoreDataManager?
+    
+    var searchController: UISearchController?
     
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,6 +35,18 @@ class ContactsViewController: UITableViewController {
 //        coreDataManager = CoreDataManager(context: context)
 //
 //        groupContactsByFirstChar()
+        
+        //use the same view controller to display results, no need for a custom search results controller
+        searchController = UISearchController(searchResultsController: nil)
+        // Setup the Search Controller
+        searchController?.searchResultsUpdater = self
+        searchController?.obscuresBackgroundDuringPresentation = false
+        searchController?.searchBar.placeholder = "Search Contacts"
+        // Setup the Scope Bar
+        searchController?.searchBar.scopeButtonTitles = ["Name","Email", "Address"]
+        searchController?.searchBar.delegate = self
+        navigationItem.searchController = searchController
+        definesPresentationContext = true
         
     }
     //group the names by their first letter, to make table view loading much easier
@@ -54,6 +70,7 @@ class ContactsViewController: UITableViewController {
         self.tableView.reloadData()
     }
     
+    //'+' button behavior
     @objc func addContactTapped(){
         if let newContactVC = storyboard?.instantiateViewController(withIdentifier: "newContact") as? NewContactViewController{
             newContactVC.managedContext = coreDataManager?.managedContext
@@ -64,7 +81,12 @@ class ContactsViewController: UITableViewController {
 
     //return total number of sections in the tableview
     override func numberOfSections(in tableView: UITableView) -> Int {
-        return firstCharToContactsDict?.keys.count ?? 0
+        if isFiltering(){
+            return filteredContactsDict.keys.count
+        }else{
+            return firstCharToContactsDict?.keys.count ?? 0
+        }
+        
     }
     
     //return height for section
@@ -74,26 +96,38 @@ class ContactsViewController: UITableViewController {
     
     //return title for the section
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
-        if let sectionKeys = firstCharToContactsDict?.keys.sorted(){
-            return String(sectionKeys[section])
-        } else { return nil }
+        if isFiltering(){
+            let key = filteredContactsDict.keys.sorted()[section]
+            return String(key)
+        } else {
+            if let sectionKeys = firstCharToContactsDict?.keys.sorted(){
+                return String(sectionKeys[section])
+            } else { return nil }
+        }
     }
     //return number of rows for every section (i.e number of names per prefix)
     override func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
-        if let groupByPrefixDictionary = firstCharToContactsDict{
-            let key = groupByPrefixDictionary.keys.sorted()[section]
-            return (groupByPrefixDictionary[key]?.count ?? 0)
+        if isFiltering(){
+            let key = filteredContactsDict.keys.sorted()[section]
+            return filteredContactsDict[key]?.count ?? 0
+        } else {
+            if let groupByPrefixDictionary = firstCharToContactsDict{
+                let key = groupByPrefixDictionary.keys.sorted()[section]
+                return (groupByPrefixDictionary[key]?.count ?? 0)
+            }
+            return 0
         }
-        return 0
     }
     //can edit all rows
     override func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
-        return true
+        return !isFiltering()
     }
     
     //define deletion behavior when user swipes right on a cell to delete a contact
     override func tableView(_ tableView: UITableView, commit editingStyle: UITableViewCell.EditingStyle, forRowAt indexPath: IndexPath) {
-        if editingStyle == .delete{
+
+        if editingStyle == .delete && !isFiltering(){
+            
             if let groupByPrefixDictionary = firstCharToContactsDict {
                 let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
                 var sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } )
@@ -107,20 +141,34 @@ class ContactsViewController: UITableViewController {
                 }
                 tableView.reloadData()
             }
+            
         }
     }
     //define what data appears in each cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "nameCell", for: indexPath)
-        if let groupByPrefixDictionary = firstCharToContactsDict {
-            let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
-            if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
-                
-                cell.textLabel?.text =  sortedContacts[indexPath.row].fullName
-                if let validPicture = sortedContacts[indexPath.row].profilePicture {
-                    cell.imageView?.image = UIImage(data: validPicture)
-                }else{
-                    cell.imageView?.image = UIImage(named: "neutralProfile.png")
+        if isFiltering(){
+            let key = filteredContactsDict.keys.sorted()[indexPath.section]
+            let sortedContacts = filteredContactsDict[key]?.sorted(by: { $0.fullName < $1.fullName } )
+            
+            cell.textLabel?.text = sortedContacts?[indexPath.row].fullName
+            if let validPicture = sortedContacts?[indexPath.row].profilePicture {
+                cell.imageView?.image = UIImage(data: validPicture)
+            } else {
+                cell.imageView?.image = UIImage(named: "neutralProfile.png")
+            }
+        
+        } else {
+            if let groupByPrefixDictionary = firstCharToContactsDict {
+                let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
+                if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
+                    
+                    cell.textLabel?.text =  sortedContacts[indexPath.row].fullName
+                    if let validPicture = sortedContacts[indexPath.row].profilePicture {
+                        cell.imageView?.image = UIImage(data: validPicture)
+                    }else{
+                        cell.imageView?.image = UIImage(named: "neutralProfile.png")
+                    }
                 }
             }
         }
@@ -130,24 +178,32 @@ class ContactsViewController: UITableViewController {
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         
         if let profileVC = storyboard?.instantiateViewController(withIdentifier: "profileView") as? ProfileViewController{
-            if let groupByPrefixDictionary = firstCharToContactsDict {
-                let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
-                if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
-                    profileVC.contactProfile = sortedContacts[indexPath.row]
-                    profileVC.coreDataManager = coreDataManager
+            if isFiltering(){
+                let key = filteredContactsDict.keys.sorted()[indexPath.section]
+                let sortedContacts = filteredContactsDict[key]?.sorted(by: { $0.fullName < $1.fullName } )
+                profileVC.contactProfile = sortedContacts?[indexPath.row]
+                profileVC.coreDataManager = coreDataManager
+            } else {
+                if let groupByPrefixDictionary = firstCharToContactsDict {
+                    let key = groupByPrefixDictionary.keys.sorted()[indexPath.section]
+                    if let sortedContacts = groupByPrefixDictionary[key]?.sorted(by: { $0.fullName < $1.fullName } ) {
+                        profileVC.contactProfile = sortedContacts[indexPath.row]
+                        profileVC.coreDataManager = coreDataManager
+                    }
                 }
             }
-            
             navigationController?.pushViewController(profileVC, animated: true)
         }
+        
     }
 }
 
 
 extension ContactsViewController: UpdateHomeScreenDelegate {
+
     func addContactToDataSource(contact: Contact) {
         if let firstChar = contact.firstName?.first {
-            print("first char",firstChar)
+            
             var contacts = self.firstCharToContactsDict?[firstChar] ?? []
             contacts.append(contact)
             firstCharToContactsDict?[firstChar] = contacts
@@ -156,5 +212,40 @@ extension ContactsViewController: UpdateHomeScreenDelegate {
         } else {
             print("contact does not have a first name?!")
         }        
+    }
+}
+
+extension ContactsViewController: UISearchResultsUpdating{
+    func isFiltering() -> Bool {
+//        let searchBarScopeIsFiltering = searchController?.searchBar.selectedScopeButtonIndex != 0
+//        return (searchController?.isActive)! && (!searchBarIsEmpty() || searchBarScopeIsFiltering)
+        return (searchController?.isActive)!
+    }
+    
+    func searchBarIsEmpty() -> Bool {
+        // Returns true if the text is empty or nil
+        return searchController?.searchBar.text?.isEmpty ?? true
+    }
+    
+    func filterContentForSearchText(_ searchText: String, scope: String = "All") {
+        
+        filteredContactsDict = (firstCharToContactsDict?.filter{
+            $0.value.filter{ $0.fullName.lowercased().contains(searchText.lowercased()) }.count > 0
+            })!
+        
+        tableView.reloadData()
+    }
+    
+    func updateSearchResults(for searchController: UISearchController) {
+        //let searchBar = searchController.searchBar
+        //let scope = searchBar.scopeButtonTitles![searchBar.selectedScopeButtonIndex]
+        filterContentForSearchText(searchController.searchBar.text!)
+    }
+}
+
+
+extension ContactsViewController: UISearchBarDelegate{
+    func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
+        filterContentForSearchText(searchBar.text!, scope: searchBar.scopeButtonTitles![selectedScope])
     }
 }
