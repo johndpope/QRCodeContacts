@@ -136,43 +136,54 @@ class NewContactViewController: UIViewController, UINavigationControllerDelegate
     //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
     @objc func saveContactTapped() {
         if let managedContext = managedContext{
-            let newContact = Contact(context: managedContext)
-            newContact.firstName = firstNameTextField.text!
-            newContact.lastName = lastNameTextField.text!
-            newContact.uniqueID = UUID.init().uuidString
             
-            if let validDate = datePicker {
-                newContact.dob = validDate
+            if (firstNameTextField.text?.count)! > 0 {
+                let newContact = Contact(context: managedContext)
+                newContact.firstName = firstNameTextField.text!
+                newContact.uniqueID = UUID.init().uuidString
+            
+                if (lastNameTextField.text?.count)! > 0 {
+                    newContact.lastName = lastNameTextField.text!
+                }
+                
+                if let validDate = datePicker {
+                    newContact.dob = validDate
+                }
+                
+                let newPhone = Phone(context: managedContext)
+                if (phoneTextField.text?.count)! > 0{
+                    newPhone.number = phoneTextField.text
+                    newPhone.contact = newContact
+                }
+                
+                let newEmail = Email(context: managedContext)
+                if (emailTextField.text?.count)! > 0 {
+                    newEmail.address = emailTextField.text
+                    newEmail.contact = newContact
+                }
+                
+                let newAddress = Address(context: managedContext)
+                if (addressTextField.text?.count)! > 0 {
+                    newAddress.street = addressTextField.text
+                    newAddress.contact = newContact
+                }
+                
+                if let validPicture = profilePicture {
+                    newContact.profilePicture = UIImage.pngData(validPicture)()
+                }
+                
+                do {
+                    try managedContext.save()
+                    delegate?.addContactToDataSource(contact: newContact)
+                } catch {
+                    print(error.localizedDescription)
+                }
+            
+            } else {
+                print("cannot make a contact without a first name!")
+                return 
             }
             
-            let newPhone = Phone(context: managedContext)
-            if (phoneTextField.text?.count)! > 0{
-                newPhone.number = phoneTextField.text
-                newPhone.contact = newContact
-            }
-            
-            let newEmail = Email(context: managedContext)
-            if (emailTextField.text?.count)! > 0 {
-                newEmail.address = emailTextField.text
-                newEmail.contact = newContact
-            }
-            
-            let newAddress = Address(context: managedContext)
-            if (addressTextField.text?.count)! > 0 {
-                newAddress.street = addressTextField.text
-                newAddress.contact = newContact
-            }
-           
-            if let validPicture = profilePicture {
-                newContact.profilePicture = UIImage.pngData(validPicture)()
-            }
-            
-            do {
-                try managedContext.save()
-                delegate?.addContactToDataSource(contact: newContact)
-            } catch {
-                print(error.localizedDescription)
-            }
         }
         dismissNewContactVC()
         
@@ -230,7 +241,6 @@ extension NewContactViewController: UIImagePickerControllerDelegate {
             return
         }
         imageView.image = image
-        print(image.size)
         profilePicture = image
     }
 }

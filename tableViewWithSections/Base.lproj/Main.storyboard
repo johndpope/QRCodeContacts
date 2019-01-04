@@ -43,7 +43,7 @@
         <scene sceneID="Rh2-GR-W7q">
             <objects>
                 <tableViewController storyboardIdentifier="profileView" id="Boz-p4-i2s" customClass="ProfileViewController" customModule="tableViewWithSections" customModuleProvider="target" sceneMemberID="viewController">
-                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="interactive" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="28" sectionFooterHeight="28" id="faU-Bb-CkT">
+                    <tableView key="view" clipsSubviews="YES" contentMode="scaleToFill" alwaysBounceVertical="YES" keyboardDismissMode="interactive" dataMode="prototypes" style="plain" separatorStyle="default" rowHeight="-1" estimatedRowHeight="-1" sectionHeaderHeight="-1" sectionFooterHeight="-1" id="faU-Bb-CkT">
                         <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
                         <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
                         <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
@@ -63,14 +63,19 @@
                                     <rect key="frame" x="0.0" y="0.0" width="320" height="43.5"/>
                                     <autoresizingMask key="autoresizingMask"/>
                                     <subviews>
-                                        <textField opaque="NO" contentMode="scaleToFill" fixedFrame="YES" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="fKH-Ij-DcU">
-                                            <rect key="frame" x="16" y="6" width="288" height="34"/>
-                                            <autoresizingMask key="autoresizingMask" flexibleMaxX="YES" flexibleMaxY="YES"/>
+                                        <textField opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="left" contentVerticalAlignment="center" textAlignment="natural" minimumFontSize="17" translatesAutoresizingMaskIntoConstraints="NO" id="fKH-Ij-DcU">
+                                            <rect key="frame" x="15" y="0.0" width="290" height="43.5"/>
                                             <nil key="textColor"/>
                                             <fontDescription key="fontDescription" type="system" pointSize="25"/>
                                             <textInputTraits key="textInputTraits"/>
                                         </textField>
                                     </subviews>
+                                    <constraints>
+                                        <constraint firstItem="fKH-Ij-DcU" firstAttribute="leading" secondItem="TjQ-k5-T7G" secondAttribute="leading" constant="15" id="Con-Nk-Ced"/>
+                                        <constraint firstItem="fKH-Ij-DcU" firstAttribute="top" secondItem="TjQ-k5-T7G" secondAttribute="top" id="JGW-JM-bUh"/>
+                                        <constraint firstAttribute="bottom" secondItem="fKH-Ij-DcU" secondAttribute="bottom" id="cky-4Y-2yg"/>
+                                        <constraint firstAttribute="trailing" secondItem="fKH-Ij-DcU" secondAttribute="trailing" constant="15" id="s5n-jm-gCq"/>
+                                    </constraints>
                                 </tableViewCellContentView>
                                 <connections>
                                     <outlet property="textField" destination="fKH-Ij-DcU" id="fVT-wD-SE2"/>

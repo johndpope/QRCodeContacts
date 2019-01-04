@@ -10,7 +10,7 @@ import Foundation
 import CoreData
 
 enum DataField {
-    case Dob,Phone,Email,Address
+    case FirstName,LastName,Dob,Phone,Email,Address
 }
 
 class CoreDataManager {
@@ -57,6 +57,12 @@ class CoreDataManager {
             let contactsInContext = try managedContext.fetch(contactRequest)
             if let validContact = contactsInContext.first{
                 switch field {
+                case .FirstName:
+                    validContact.firstName = newValue as? String
+                    didUpdateSuccessfully = true
+                case .LastName:
+                    validContact.lastName = newValue as? String
+                    didUpdateSuccessfully = true
                 case .Dob:
                     validContact.dob = newValue as? Date
                     didUpdateSuccessfully = true

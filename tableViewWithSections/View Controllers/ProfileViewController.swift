@@ -29,7 +29,7 @@ class ProfileViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-        self.title = contactProfile?.fullName
+        //self.title = contactProfile?.fullName
         navigationItem.rightBarButtonItem = editButtonItem
         self.tableView.allowsSelectionDuringEditing = true
         contactPhones = ((contactProfile?.phones?.map { ($0 as! Phone).number! })?.sorted())!
@@ -70,7 +70,7 @@ class ProfileViewController: UITableViewController {
 
         switch section {
             case Section.photo.rawValue,Section.dob.rawValue: return 1
-            case Section.name.rawValue: return 0
+            case Section.name.rawValue: return 2
             case Section.phone.rawValue: return (contactPhones.count)
             case Section.email.rawValue: return (contactEmails.count)
             case Section.address.rawValue: return (contactAddresses.count)
@@ -131,22 +131,17 @@ class ProfileViewController: UITableViewController {
         switch indexPath.section {
         case Section.photo.rawValue:
             return indexPath.row == 0 ? true : false
-        case Section.dob.rawValue:
-                return true
-            case Section.phone.rawValue,Section.email.rawValue,Section.address.rawValue:
-                return indexPath.row == 0 && tableView.isEditing ? false : true
-            default: return false
+        case Section.name.rawValue: return true
+        case Section.dob.rawValue: return true
+        case Section.phone.rawValue,Section.email.rawValue,Section.address.rawValue:
+            return indexPath.row == 0 && tableView.isEditing ? false : true
+        default: return false
         }
     }
     
     //define editing style (+/-) for any cell when edit mode is active
     override func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
-        
-        if indexPath.row > 0 && indexPath.section != Section.dob.rawValue {
-            return .delete
-        } else {
-            return .none
-        }
+        return indexPath.row > 0 && indexPath.section >=  Section.phone.rawValue ? .delete : .none
     }
     
     
@@ -154,11 +149,7 @@ class ProfileViewController: UITableViewController {
     //define actions when a row is selected, especially during editing mode
     override func tableView(_ tableView: UITableView, didSelectRowAt indexPath: IndexPath) {
         if tableView.isEditing == true {
-            if indexPath.section == Section.photo.rawValue && indexPath.row == 0{
-                
-            }
-            
-            else if indexPath.section >= Section.phone.rawValue && indexPath.row == 0 {
+             if indexPath.section >= Section.phone.rawValue && indexPath.row == 0 {
                 var count = 0
                 let emptyString = ""
                 switch indexPath.section{
@@ -210,8 +201,8 @@ class ProfileViewController: UITableViewController {
             }
             return photoCell
         case Section.name.rawValue:
-            let text = "\(contactProfile?.firstName ?? "") \(contactProfile?.lastName ?? "")"
-            return createSingleEntryCell(with: text, in: indexPath)
+            let fullName = [contactProfile?.firstName,contactProfile?.lastName]
+            return createSingleEntryCell(with: fullName[indexPath.row] ?? "", in: indexPath)
         case Section.dob.rawValue:
             
             if let validDate = contactProfile?.dob{
@@ -238,6 +229,12 @@ class ProfileViewController: UITableViewController {
 
     func createSingleEntryCell(with text: String, in indexPath: IndexPath)-> SingleEntryCell{
         let singleEntryCell = tableView.dequeueReusableCell(withIdentifier: "singleEntryCell", for: indexPath) as! SingleEntryCell
+        switch indexPath.section{
+        case Section.name.rawValue:
+            singleEntryCell.textField.textAlignment = .center
+        default: break
+        }
+        
         singleEntryCell.textField.text = text
         singleEntryCell.textField.autocorrectionType = .no
         singleEntryCell.textField.delegate = self
@@ -257,14 +254,22 @@ extension ProfileViewController: UITextFieldDelegate{
         currentTextField = textField
         currentText = textField.text
         
-        if indexPathOfTextField?.section == Section.dob.rawValue {
-            
+        switch indexPathOfTextField?.section{
+        case Section.name.rawValue:
+            textField.autocapitalizationType = .words
+        case Section.dob.rawValue:
             let datePicker = UIDatePicker()
             datePicker.datePickerMode = .date
             datePicker.addTarget(self, action: #selector(updateTextFieldWithDate(sender:)), for: .valueChanged)
             textField.inputView = datePicker
             textField.text = formatForView(date: datePicker.date)
+        case Section.phone.rawValue:
+            textField.keyboardType = .asciiCapableNumberPad
+        case Section.email.rawValue:
+            textField.keyboardType = .emailAddress
+        default: break
         }
+        
     }
     
 //    //update the d.o.b text field with the date picked by the datepicker
@@ -287,34 +292,44 @@ extension ProfileViewController: UITextFieldDelegate{
         if let indexPath = indexPathOfTextField, let newEntry = textField.text, let contact = contactProfile,let coreDataManager = coreDataManager {
             
             switch indexPathOfTextField?.section {
+            case Section.name.rawValue:
+                if indexPathOfTextField?.row == 0{
+                    _ = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.FirstName, oldValue: contact.firstName, newValue: newEntry)
+                    contactProfile?.firstName = newEntry
+                } else {
+                    _ = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.LastName, oldValue: contact.lastName, newValue: newEntry)
+                    contactProfile?.lastName = newEntry
+                }
             case Section.dob.rawValue:
                 _ = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Dob, oldValue: contact.dob, newValue: datePickerValue)
                 contactProfile?.dob = datePickerValue
             case Section.phone.rawValue:
-                if !inputIsValid(input: newEntry, field: DataField.Phone) || contactPhones.contains(newEntry){
-                    contactPhones.remove(at: indexPath.row)
-                    tableView.deleteRows(at: [indexPath], with: .right)
-                    //perfect place for an alert VC...
-                } else {
+//                if !inputIsValid(input: newEntry, field: DataField.Phone){
+//                    contactPhones.remove(at: indexPath.row)
+//                    tableView.deleteRows(at: [indexPath], with: .right)
+//                    //perfect place for an alert VC...
+//                }
+                if inputIsValid(input: newEntry, field: DataField.Phone) && !contactPhones.contains(newEntry){
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Phone, oldValue: contactPhones[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactPhones[indexPath.row] = newEntry }
                 }
                 
             case Section.email.rawValue:
-                if !inputIsValid(input: newEntry, field: DataField.Email) || contactEmails.contains(newEntry){
-                    contactEmails.remove(at: indexPath.row)
-                    tableView.deleteRows(at: [indexPath], with: .right)
-                } else {
+//                if !inputIsValid(input: newEntry, field: DataField.Email) {
+//                    contactEmails.remove(at: indexPath.row)
+//                    tableView.deleteRows(at: [indexPath], with: .right)
+//                }
+                if inputIsValid(input: newEntry, field: DataField.Email) && !contactEmails.contains(newEntry){
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Email, oldValue: contactEmails[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactEmails[indexPath.row] = newEntry }
                 }
            
             case Section.address.rawValue:
-                
-                if !inputIsValid(input: newEntry, field: DataField.Address) || contactAddresses.contains(newEntry){
-                    contactAddresses.remove(at: indexPath.row)
-                    tableView.deleteRows(at: [indexPath], with: .right)
-                } else {
+//                if !inputIsValid(input: newEntry, field: DataField.Address){
+//                    contactAddresses.remove(at: indexPath.row)
+//                    tableView.deleteRows(at: [indexPath], with: .right)
+//                }
+                if inputIsValid(input: newEntry, field: DataField.Address) && !contactAddresses.contains(newEntry){
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Address, oldValue: contactAddresses[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactAddresses[indexPath.row] = newEntry }
                 }
@@ -337,6 +352,9 @@ extension ProfileViewController: UITextFieldDelegate{
         case .Address:
             print("address must...uh do whatever actually")
             return (input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).count > 0) ? true : false
+        default:
+            print("analyzed input, didn't find anything wrong")
+        return true
         }
         return true
     }

@@ -23,25 +23,34 @@ class ContactsViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+//        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContactTapped))
+//        self.title = "Contacts"
+//        //get our managed object context, the 'scratchpad' to jot down our CRUD operations on data before committing to persistent store
+//        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+//        let context = appDelegate.persistentContainer.viewContext
+//        coreDataManager = CoreDataManager(context: context)
+//
+//        groupContactsByFirstChar()
+        
+    }
+    //group the names by their first letter, to make table view loading much easier
+    func groupContactsByFirstChar(){
+        if let currentInterimContacts = coreDataManager?.contactsArray{
+            
+            firstCharToContactsDict = Dictionary(grouping: currentInterimContacts, by: { ($0.firstName?.first!)! })
+        }
+    }
+    
+    //refresh the tableview after returning from either the profile or new contact view. 
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContactTapped))
         self.title = "Contacts"
         //get our managed object context, the 'scratchpad' to jot down our CRUD operations on data before committing to persistent store
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
         let context = appDelegate.persistentContainer.viewContext
         coreDataManager = CoreDataManager(context: context)
-        
-        //get the existing contacts
-        if let currentInterimContacts = coreDataManager?.contactsArray{
-        //group the names by their first letter, to make table view loading much easier
-            //dump(currentInterimContacts)"
-            
-            firstCharToContactsDict = Dictionary(grouping: currentInterimContacts, by: { ($0.firstName?.first!)! })
-        }
-        
-    }
-    //refresh the tableview after returning from either the profile or new contact view. 
-    override func viewWillAppear(_ animated: Bool) {
-        super.viewWillAppear(animated)
+        groupContactsByFirstChar()
         self.tableView.reloadData()
     }
     
@@ -138,6 +147,7 @@ class ContactsViewController: UITableViewController {
 extension ContactsViewController: UpdateHomeScreenDelegate {
     func addContactToDataSource(contact: Contact) {
         if let firstChar = contact.firstName?.first {
+            print("first char",firstChar)
             var contacts = self.firstCharToContactsDict?[firstChar] ?? []
             contacts.append(contact)
             firstCharToContactsDict?[firstChar] = contacts
