@@ -10,11 +10,11 @@ import UIKit
 import AVFoundation
 
 protocol ScannerDelegate: AnyObject {
-    func display(decodedMessage: String)
+    func createContactFrom(decoded contact: CodableContact)
 }
 
 //https://www.hackingwithswift.com/example-code/media/how-to-scan-a-qr-code
-class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
+class QRScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDelegate {
     var captureSession: AVCaptureSession!
     var previewLayer: AVCaptureVideoPreviewLayer!
     var delegate: ScannerDelegate!
@@ -93,9 +93,10 @@ class ScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsDel
                 do {
                     if let validData = readableObject?.stringValue?.data(using: .utf8){
                         
-                        let dict = try JSONDecoder().decode([String:String].self,from:validData)
-                        dump(dict)
-                        AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+                        let contact = try JSONDecoder().decode(CodableContact.self,from:validData)
+                        //dump(contact)
+    AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
+                        delegate.createContactFrom(decoded: contact)
                     }
                 } catch {
                     print(error.localizedDescription)

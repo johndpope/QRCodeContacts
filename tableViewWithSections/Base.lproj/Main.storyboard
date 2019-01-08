@@ -213,6 +213,52 @@
             </objects>
             <point key="canvasLocation" x="2217" y="75"/>
         </scene>
+        <!--Display View Controller-->
+        <scene sceneID="bua-1t-gTJ">
+            <objects>
+                <viewController storyboardIdentifier="QRCodeDisplay" id="AgC-6L-vK2" customClass="QRDisplayViewController" customModule="tableViewWithSections" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="WV0-i3-czQ">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <subviews>
+                            <imageView userInteractionEnabled="NO" contentMode="scaleToFill" horizontalHuggingPriority="251" verticalHuggingPriority="251" translatesAutoresizingMaskIntoConstraints="NO" id="3Qn-BR-xpe">
+                                <rect key="frame" x="0.0" y="134" width="320" height="320"/>
+                                <constraints>
+                                    <constraint firstAttribute="width" secondItem="3Qn-BR-xpe" secondAttribute="height" multiplier="1:1" id="fA4-hM-MkZ"/>
+                                </constraints>
+                            </imageView>
+                        </subviews>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <constraints>
+                            <constraint firstItem="3Qn-BR-xpe" firstAttribute="centerX" secondItem="FJx-yi-3Lp" secondAttribute="centerX" id="7Ff-rf-b7d"/>
+                            <constraint firstItem="3Qn-BR-xpe" firstAttribute="width" secondItem="WV0-i3-czQ" secondAttribute="width" id="Zjg-na-NH1"/>
+                            <constraint firstItem="3Qn-BR-xpe" firstAttribute="centerY" secondItem="FJx-yi-3Lp" secondAttribute="centerY" id="aiT-ob-Wgv"/>
+                        </constraints>
+                        <viewLayoutGuide key="safeArea" id="FJx-yi-3Lp"/>
+                    </view>
+                    <connections>
+                        <outlet property="QRCodeImage" destination="3Qn-BR-xpe" id="UiA-ka-4WD"/>
+                    </connections>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="WCd-UN-3P3" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3000" y="61"/>
+        </scene>
+        <!--Scanner View Controller-->
+        <scene sceneID="rLf-KA-Bkr">
+            <objects>
+                <viewController storyboardIdentifier="QRScannerVC" id="7dA-7f-DX9" customClass="QRScannerViewController" customModule="tableViewWithSections" customModuleProvider="target" sceneMemberID="viewController">
+                    <view key="view" contentMode="scaleToFill" id="NGN-D3-xnV">
+                        <rect key="frame" x="0.0" y="0.0" width="320" height="568"/>
+                        <autoresizingMask key="autoresizingMask" widthSizable="YES" heightSizable="YES"/>
+                        <color key="backgroundColor" white="1" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
+                        <viewLayoutGuide key="safeArea" id="O1c-8p-Fgy"/>
+                    </view>
+                </viewController>
+                <placeholder placeholderIdentifier="IBFirstResponder" id="JG0-P2-bi4" userLabel="First Responder" sceneMemberID="firstResponder"/>
+            </objects>
+            <point key="canvasLocation" x="3860" y="53"/>
+        </scene>
         <!--Navigation Controller-->
         <scene sceneID="hVw-ra-Y7Q">
             <objects>

@@ -8,9 +8,20 @@
 
 import UIKit
 import CoreData
+import CoreImage
+
+
+struct CodableContact: Codable{
+    let firstName: String
+    let lastName: String?
+    let dob: Date?
+    let phone: String?
+    let email: String?
+    let address: String?
+}
 
 enum Section: Int{
-    case photo = 0, name, dob, phone, email, address, total
+    case photo = 0, name, dob, phone, email, address, QRCode,total
 }
 
 
@@ -74,6 +85,7 @@ class ProfileViewController: UITableViewController {
             case Section.phone.rawValue: return (contactPhones.count)
             case Section.email.rawValue: return (contactEmails.count)
             case Section.address.rawValue: return (contactAddresses.count)
+            case Section.QRCode.rawValue: return 1
             default: return 0
         }
         
@@ -92,6 +104,7 @@ class ProfileViewController: UITableViewController {
             case Section.phone.rawValue: return "Phone"
             case Section.email.rawValue: return "Email"
             case Section.address.rawValue: return "Address"
+            case Section.QRCode.rawValue: return "QR Code"
             default: return nil
         }
     }
@@ -141,7 +154,7 @@ class ProfileViewController: UITableViewController {
     
     //define editing style (+/-) for any cell when edit mode is active
     override func tableView(_ tableView: UITableView, editingStyleForRowAt indexPath: IndexPath) -> UITableViewCell.EditingStyle {
-        return indexPath.row > 0 && indexPath.section >=  Section.phone.rawValue ? .delete : .none
+        return indexPath.row > 0 && [Section.phone.rawValue, Section.email.rawValue, Section.address.rawValue].contains(indexPath.section) ? .delete : .none
     }
     
     
@@ -163,9 +176,21 @@ class ProfileViewController: UITableViewController {
                 case Section.address.rawValue:
                     contactAddresses.append(emptyString)
                     count = contactAddresses.count - 1
-                default: print("default action")
+                default:
+                    print("default action")
+                    return
                 }
                 tableView.insertRows(at: [IndexPath(row: count, section: indexPath.section)], with: .bottom)
+            }
+        } else {
+            if indexPath.section == Section.QRCode.rawValue{
+                print("QR Code selected")
+                if let QRCodeDisplayVC = storyboard?.instantiateViewController(withIdentifier: "QRCodeDisplay") as? QRDisplayViewController, let validQRCode = generateQRCode(){
+                    QRCodeDisplayVC.qrCode = validQRCode
+                    navigationController?.pushViewController(QRCodeDisplayVC, animated: true)
+                } else {
+                    print("invalid QR code!")
+                }
             }
         }
     }
@@ -221,6 +246,9 @@ class ProfileViewController: UITableViewController {
         case Section.address.rawValue:
             let address = contactAddresses[indexPath.row]
             return createSingleEntryCell(with: address, in: indexPath)
+        case Section.QRCode.rawValue:
+            let qrDescription = "Share QR Code"
+            return createSingleEntryCell(with: qrDescription, in: indexPath)
         default:
             return createSingleEntryCell(with: "radishes", in: indexPath)
         }
@@ -395,5 +423,31 @@ extension ProfileViewController: UIImagePickerControllerDelegate, UINavigationCo
         vc.allowsEditing = true
         vc.delegate = self
         present(vc,animated: true)
+    }
+}
+
+
+
+extension ProfileViewController {
+    
+    func generateQRCode() -> UIImage? {
+        let input = CodableContact(firstName: (contactProfile?.firstName)!, lastName: contactProfile?.lastName,dob: contactProfile?.dob, phone: contactPhones.first, email: contactEmails.first, address: contactAddresses.first)
+        do {
+            let data = try JSONEncoder().encode(input)
+            if let validData = String(data: data,encoding: .utf8){
+                print(validData)
+            }
+            
+            if let filter = CIFilter(name: "CIQRCodeGenerator"){
+                filter.setValue(data, forKey: "inputMessage")
+                let transform = CGAffineTransform(scaleX: 10, y: 10)
+                if let output = filter.outputImage?.transformed(by: transform){
+                    return UIImage(ciImage: output)
+                }
+            }
+        } catch {
+            print(error.localizedDescription)
+        }
+        return nil
     }
 }

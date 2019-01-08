@@ -13,6 +13,7 @@ protocol UpdateHomeScreenDelegate: AnyObject {
     func addContactToDataSource(contact: Contact)
 }
 
+
 class ContactsViewController: UITableViewController {
     
     var sectionHeaderHeight = CGFloat(25)
@@ -30,6 +31,7 @@ class ContactsViewController: UITableViewController {
         
         //use the same view controller to display results, no need for a custom search results controller
         navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContactTapped))
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .camera, target: self, action: #selector(takeQRPhotoTapped))
         self.title = "Contacts"
         //get our managed object context, the 'scratchpad' to jot down our CRUD operations on data before committing to persistent store
         let appDelegate = UIApplication.shared.delegate as! AppDelegate
@@ -67,6 +69,14 @@ class ContactsViewController: UITableViewController {
         if let newContactVC = storyboard?.instantiateViewController(withIdentifier: "newContact") as? NewContactViewController{
             newContactVC.coreDataManager = coreDataManager
             navigationController?.pushViewController(newContactVC, animated: true)
+        }
+    }
+    
+    @objc func takeQRPhotoTapped(){
+        if let QRScannerVC = storyboard?.instantiateViewController(withIdentifier: "QRScannerVC") as? QRScannerViewController{
+            print("yay!")
+            QRScannerVC.delegate = self
+            navigationController?.pushViewController(QRScannerVC, animated: true)
         }
     }
 
@@ -238,5 +248,12 @@ extension ContactsViewController: UISearchResultsUpdating{
 extension ContactsViewController: UISearchBarDelegate{
     func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
         filterContentForSearchText(searchBar.text!, scope: searchBar.scopeButtonTitles![selectedScope])
+    }
+}
+
+extension ContactsViewController: ScannerDelegate{
+    func createContactFrom(decoded contact: CodableContact) {
+        let newContact = NewContact(firstName: contact.firstName, lastName: contact.lastName, uniqueID: UUID.init().uuidString, dob: contact.dob, phone: contact.phone, email: contact.email, address: contact.address, profilePicture: nil)
+        coreDataManager?.createNew(contact: newContact)
     }
 }
