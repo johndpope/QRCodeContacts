@@ -9,7 +9,19 @@
 import UIKit
 import CoreData
 
-class NewContactViewController: UIViewController, UINavigationControllerDelegate{
+struct NewContact {
+        let firstName: String
+        let lastName: String?
+        let uniqueID: String?
+        let dob: Date?
+        let phone: String?
+        let email: String?
+        let address: String?
+        let profilePicture: UIImage?
+}
+
+
+class NewContactViewController: UIViewController{
     
     @IBOutlet weak var firstNameTextField: UITextField!
     
@@ -33,9 +45,8 @@ class NewContactViewController: UIViewController, UINavigationControllerDelegate
     
     var datePicker: Date?
     
-    var managedContext: NSManagedObjectContext?
+    var coreDataManager: CoreDataManager!
     
-    var delegate: UpdateHomeScreenDelegate?
     
     @IBOutlet weak var scrollView: UIScrollView!
     
@@ -99,92 +110,32 @@ class NewContactViewController: UIViewController, UINavigationControllerDelegate
     @objc func keyboardDismissTapped(){
         view.endEditing(true)
     }
-    
-    @objc func setProfilePicture(){
-        let alertVC = UIAlertController(title: nil, message: "Pick a profile picture", preferredStyle: .alert)
-        let cameraAction = UIAlertAction(title: "Camera", style: .default, handler: takePhoto)
-        let photoLibraryAction = UIAlertAction(title: "Photos Library", style: .default, handler: pickPhoto)
-        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
-        alertVC.addAction(cameraAction)
-        alertVC.addAction(photoLibraryAction)
-        alertVC.addAction(cancelAction)
-        
-        //popover presentation is used on iPads to specify origin of alertVC popup.
-        alertVC.popoverPresentationController?.sourceView = self.view
-        alertVC.popoverPresentationController?.sourceRect = imageView.frame
-        
-        present(alertVC, animated: true)
-    }
-    
-    func takePhoto(action: UIAlertAction){
-        let vc = UIImagePickerController()
-        vc.sourceType = .camera
-        vc.allowsEditing = true
-        vc.delegate = self
-        present(vc, animated: true)
-    }
-    
-    
-    func pickPhoto(action: UIAlertAction){
-        let vc = UIImagePickerController()
-        vc.sourceType = .photoLibrary
-        vc.allowsEditing = true
-        vc.delegate = self
-        present(vc,animated: true)
-    }
+
     
     //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
     @objc func saveContactTapped() {
-        if let managedContext = managedContext{
+        if let firstName = firstNameTextField.text{
             
-            if (firstNameTextField.text?.count)! > 0 {
-                let newContact = Contact(context: managedContext)
-                newContact.firstName = firstNameTextField.text!
-                newContact.uniqueID = UUID.init().uuidString
+            let uniqueID = UUID.init().uuidString
             
-                if (lastNameTextField.text?.count)! > 0 {
-                    newContact.lastName = lastNameTextField.text!
-                }
-                
-                if let validDate = datePicker {
-                    newContact.dob = validDate
-                }
-                
-                let newPhone = Phone(context: managedContext)
-                if (phoneTextField.text?.count)! > 0{
-                    newPhone.number = phoneTextField.text
-                    newPhone.contact = newContact
-                }
-                
-                let newEmail = Email(context: managedContext)
-                if (emailTextField.text?.count)! > 0 {
-                    newEmail.address = emailTextField.text
-                    newEmail.contact = newContact
-                }
-                
-                let newAddress = Address(context: managedContext)
-                if (addressTextField.text?.count)! > 0 {
-                    newAddress.street = addressTextField.text
-                    newAddress.contact = newContact
-                }
-                
-                if let validPicture = profilePicture {
-                    newContact.profilePicture = UIImage.pngData(validPicture)()
-                }
-                
-                do {
-                    try managedContext.save()
-                    delegate?.addContactToDataSource(contact: newContact)
-                } catch {
-                    print(error.localizedDescription)
-                }
+            let lastName = lastNameTextField.text
             
-            } else {
-                print("cannot make a contact without a first name!")
-                return 
-            }
+            let validDate = datePicker
             
+            let phone = phoneTextField.text
+            
+            let email = emailTextField.text
+            
+            let address = addressTextField.text
+            
+            let profilePicture = self.profilePicture
+            
+            let newContact = NewContact(firstName: firstName, lastName: lastName, uniqueID: uniqueID, dob: validDate, phone: phone, email: email, address: address, profilePicture: profilePicture)
+            coreDataManager.createNew(contact: newContact)
+        } else {
+            print("invalid contact!")
         }
+        
         dismissNewContactVC()
         
     }
@@ -234,7 +185,7 @@ extension NewContactViewController: UITextFieldDelegate{
     
 }
 
-extension NewContactViewController: UIImagePickerControllerDelegate {
+extension NewContactViewController: UIImagePickerControllerDelegate,UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
         guard let image = info[.editedImage] as? UIImage else {
@@ -242,5 +193,39 @@ extension NewContactViewController: UIImagePickerControllerDelegate {
         }
         imageView.image = image
         profilePicture = image
+        
+    }
+    
+    @objc func setProfilePicture(){
+        let alertVC = UIAlertController(title: nil, message: "Pick a profile picture", preferredStyle: .alert)
+        let cameraAction = UIAlertAction(title: "Camera", style: .default, handler: takePhoto)
+        let photoLibraryAction = UIAlertAction(title: "Photos Library", style: .default, handler: pickPhoto)
+        let cancelAction = UIAlertAction(title: "Cancel", style: .cancel, handler: nil)
+        alertVC.addAction(cameraAction)
+        alertVC.addAction(photoLibraryAction)
+        alertVC.addAction(cancelAction)
+        
+        //popover presentation is used on iPads to specify origin of alertVC popup.
+        alertVC.popoverPresentationController?.sourceView = self.view
+        alertVC.popoverPresentationController?.sourceRect = imageView.frame
+        
+        present(alertVC, animated: true)
+    }
+    
+    func takePhoto(action: UIAlertAction){
+        let vc = UIImagePickerController()
+        vc.sourceType = .camera
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc, animated: true)
+    }
+    
+    
+    func pickPhoto(action: UIAlertAction){
+        let vc = UIImagePickerController()
+        vc.sourceType = .photoLibrary
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc,animated: true)
     }
 }

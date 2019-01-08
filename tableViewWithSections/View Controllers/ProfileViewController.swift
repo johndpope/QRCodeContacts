@@ -304,31 +304,18 @@ extension ProfileViewController: UITextFieldDelegate{
                 _ = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Dob, oldValue: contact.dob, newValue: datePickerValue)
                 contactProfile?.dob = datePickerValue
             case Section.phone.rawValue:
-//                if !inputIsValid(input: newEntry, field: DataField.Phone){
-//                    contactPhones.remove(at: indexPath.row)
-//                    tableView.deleteRows(at: [indexPath], with: .right)
-//                    //perfect place for an alert VC...
-//                }
                 if inputIsValid(input: newEntry, field: DataField.Phone) && !contactPhones.contains(newEntry){
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Phone, oldValue: contactPhones[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactPhones[indexPath.row] = newEntry }
                 }
                 
             case Section.email.rawValue:
-//                if !inputIsValid(input: newEntry, field: DataField.Email) {
-//                    contactEmails.remove(at: indexPath.row)
-//                    tableView.deleteRows(at: [indexPath], with: .right)
-//                }
                 if inputIsValid(input: newEntry, field: DataField.Email) && !contactEmails.contains(newEntry){
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Email, oldValue: contactEmails[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactEmails[indexPath.row] = newEntry }
                 }
            
             case Section.address.rawValue:
-//                if !inputIsValid(input: newEntry, field: DataField.Address){
-//                    contactAddresses.remove(at: indexPath.row)
-//                    tableView.deleteRows(at: [indexPath], with: .right)
-//                }
                 if inputIsValid(input: newEntry, field: DataField.Address) && !contactAddresses.contains(newEntry){
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Address, oldValue: contactAddresses[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactAddresses[indexPath.row] = newEntry }

@@ -27,16 +27,15 @@ class ContactsViewController: UITableViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
-//        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContactTapped))
-//        self.title = "Contacts"
-//        //get our managed object context, the 'scratchpad' to jot down our CRUD operations on data before committing to persistent store
-//        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-//        let context = appDelegate.persistentContainer.viewContext
-//        coreDataManager = CoreDataManager(context: context)
-//
-//        groupContactsByFirstChar()
         
         //use the same view controller to display results, no need for a custom search results controller
+        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContactTapped))
+        self.title = "Contacts"
+        //get our managed object context, the 'scratchpad' to jot down our CRUD operations on data before committing to persistent store
+        let appDelegate = UIApplication.shared.delegate as! AppDelegate
+        let context = appDelegate.persistentContainer.viewContext
+        coreDataManager = CoreDataManager(context: context)
+        coreDataManager?.delegate = self
         searchController = UISearchController(searchResultsController: nil)
         // Setup the Search Controller
         searchController?.searchResultsUpdater = self
@@ -52,7 +51,6 @@ class ContactsViewController: UITableViewController {
     //group the names by their first letter, to make table view loading much easier
     func groupContactsByFirstChar(){
         if let currentInterimContacts = coreDataManager?.contactsArray{
-            
             firstCharToContactsDict = Dictionary(grouping: currentInterimContacts, by: { ($0.firstName?.first!)! })
         }
     }
@@ -60,12 +58,6 @@ class ContactsViewController: UITableViewController {
     //refresh the tableview after returning from either the profile or new contact view. 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
-        navigationItem.rightBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addContactTapped))
-        self.title = "Contacts"
-        //get our managed object context, the 'scratchpad' to jot down our CRUD operations on data before committing to persistent store
-        let appDelegate = UIApplication.shared.delegate as! AppDelegate
-        let context = appDelegate.persistentContainer.viewContext
-        coreDataManager = CoreDataManager(context: context)
         groupContactsByFirstChar()
         self.tableView.reloadData()
     }
@@ -73,8 +65,7 @@ class ContactsViewController: UITableViewController {
     //'+' button behavior
     @objc func addContactTapped(){
         if let newContactVC = storyboard?.instantiateViewController(withIdentifier: "newContact") as? NewContactViewController{
-            newContactVC.managedContext = coreDataManager?.managedContext
-            newContactVC.delegate = self
+            newContactVC.coreDataManager = coreDataManager
             navigationController?.pushViewController(newContactVC, animated: true)
         }
     }

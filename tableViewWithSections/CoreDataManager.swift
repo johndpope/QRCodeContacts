@@ -6,7 +6,7 @@
 //  Copyright © 2018 Jerry Wang. All rights reserved.
 //
 
-import Foundation
+import UIKit
 import CoreData
 
 enum DataField {
@@ -18,6 +18,7 @@ class CoreDataManager {
     var contactsArray: [Contact] {
         return self.fetchAllContacts()
     }
+    var delegate: UpdateHomeScreenDelegate!
     
     init(context: NSManagedObjectContext){
         self.managedContext = context
@@ -32,6 +33,54 @@ class CoreDataManager {
         }
     }
     
+    func createNew(contact: NewContact){
+
+        let newContact = Contact(context: managedContext)
+        newContact.firstName = contact.firstName
+        newContact.uniqueID = contact.uniqueID
+        
+        if let validLastName = contact.lastName{
+            newContact.lastName = validLastName
+        }
+        
+        if let validDate = contact.dob {
+            newContact.dob = validDate
+        }
+        
+    
+        if let validPhone = contact.phone{
+            let newPhone = Phone(context: managedContext)
+            newPhone.number = validPhone
+            newPhone.contact = newContact
+        }
+        
+    
+        if let validEmail = contact.email {
+            let newEmail = Email(context: managedContext)
+            newEmail.address = validEmail
+            newEmail.contact = newContact
+        }
+        
+    
+        if let validAddress = contact.address {
+            let newAddress = Address(context: managedContext)
+            newAddress.street = validAddress
+            newAddress.contact = newContact
+        }
+        
+        if let validPicture = contact.profilePicture {
+            newContact.profilePicture = UIImage.pngData(validPicture)()
+        }
+        
+        do {
+            try managedContext.save()
+            delegate?.addContactToDataSource(contact: newContact)
+        } catch {
+            print(error.localizedDescription)
+        }
+                
+        
+    }
     
     //read user data operation
     func fetchAllContacts() -> [Contact]{
@@ -210,8 +259,6 @@ class CoreDataManager {
     //delete user operation
     func delete(contact: Contact){
         let request: NSFetchRequest<Contact> = Contact.fetchRequest()
-
-        //ugh...have to fix unique id
         request.predicate = NSPredicate(format: "uniqueID = %@", contact.uniqueID!)
         //find the first user with name and delete from managed context
         do {
