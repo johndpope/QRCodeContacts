@@ -7,7 +7,7 @@
 //
 
 import UIKit
-
+//display the QR code from the qrCode image passed when this VC is instantiated
 class QRDisplayViewController: UIViewController{
     @IBOutlet weak var QRCodeImage: UIImageView!
     var qrCode: UIImage!

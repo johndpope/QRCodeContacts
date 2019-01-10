@@ -98,8 +98,6 @@ class ProfileViewController: UITableViewController {
     //define title for each section in table view
     override func tableView(_ tableView: UITableView, titleForHeaderInSection section: Int) -> String? {
         switch section {
-            //case 0: return "Profile Picture"
-            //case Section.name.rawValue: return "Name"
             case Section.dob.rawValue: return "Date of Birth"
             case Section.phone.rawValue: return "Phone"
             case Section.email.rawValue: return "Email"
@@ -177,19 +175,19 @@ class ProfileViewController: UITableViewController {
                     contactAddresses.append(emptyString)
                     count = contactAddresses.count - 1
                 default:
-                    print("default action")
+                    
                     return
                 }
                 tableView.insertRows(at: [IndexPath(row: count, section: indexPath.section)], with: .bottom)
             }
         } else {
             if indexPath.section == Section.QRCode.rawValue{
-                print("QR Code selected")
+                
                 if let QRCodeDisplayVC = storyboard?.instantiateViewController(withIdentifier: "QRCodeDisplay") as? QRDisplayViewController, let validQRCode = generateQRCode(){
                     QRCodeDisplayVC.qrCode = validQRCode
                     navigationController?.pushViewController(QRCodeDisplayVC, animated: true)
                 } else {
-                    print("invalid QR code!")
+                    
                 }
             }
         }
@@ -273,7 +271,7 @@ class ProfileViewController: UITableViewController {
 
 
 extension ProfileViewController: UITextFieldDelegate{
-
+    //when text field begins to edit, present the right keyboard for the field
     func textFieldDidBeginEditing(_ textField: UITextField) {
         
         //convert the textfield to an indexpath
@@ -300,7 +298,7 @@ extension ProfileViewController: UITextFieldDelegate{
         
     }
     
-//    //update the d.o.b text field with the date picked by the datepicker
+    //update the d.o.b text field with the date picked by the datepicker
     @objc func updateTextFieldWithDate(sender: UIDatePicker){
         currentTextField?.text = formatForView(date: sender.date)
     }
@@ -313,6 +311,7 @@ extension ProfileViewController: UITextFieldDelegate{
         return formatter.string(from:date)
     }
     
+    //after the textfield returns with input, check that it's valid and update the value in core data
     func textFieldDidEndEditing(_ textField: UITextField) {
         currentTextField = nil
         let textFieldOrigin = textField.convert(textField.bounds.origin, to: self.tableView)
@@ -332,46 +331,61 @@ extension ProfileViewController: UITextFieldDelegate{
                 _ = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Dob, oldValue: contact.dob, newValue: datePickerValue)
                 contactProfile?.dob = datePickerValue
             case Section.phone.rawValue:
-                if inputIsValid(input: newEntry, field: DataField.Phone) && !contactPhones.contains(newEntry){
+                if contactPhones.contains(newEntry){
+                    presentAC(message: "Phone number already exists.")
+                } else if !inputIsValid(input: newEntry, field: DataField.Phone){
+                    presentAC(message: "Invalid Phone number.")
+                } else {
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Phone, oldValue: contactPhones[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactPhones[indexPath.row] = newEntry }
                 }
-                
             case Section.email.rawValue:
-                if inputIsValid(input: newEntry, field: DataField.Email) && !contactEmails.contains(newEntry){
+                
+                if contactEmails.contains(newEntry){
+                    presentAC(message: "Email address already exists.")
+                } else if !inputIsValid(input: newEntry, field: DataField.Email){
+                    presentAC(message: "Invalid Email Address.")
+                } else {
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Email, oldValue: contactEmails[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactEmails[indexPath.row] = newEntry }
                 }
-           
+                
             case Section.address.rawValue:
-                if inputIsValid(input: newEntry, field: DataField.Address) && !contactAddresses.contains(newEntry){
+                if contactAddresses.contains(newEntry){
+                    presentAC(message: "Address already exists.")
+                } else if !inputIsValid(input: newEntry, field: DataField.Address){
+                    presentAC(message: "Invalid Address.")
+                } else {
                     let coreUpdated = coreDataManager.updateCurrentContact(uniqueID: contact.uniqueID!, field: DataField.Address, oldValue: contactAddresses[indexPath.row], newValue: newEntry)
                     if coreUpdated { contactAddresses[indexPath.row] = newEntry }
                 }
+                
             default:
                 break
             }
         }
     }
     
+    func presentAC(message: String){
+        let ac = UIAlertController(title: message, message: nil, preferredStyle: .alert)
+        ac.addAction(UIAlertAction(title: "OK", style: .default))
+        present(ac, animated: true)
+    }
+    
     func inputIsValid(input: String, field: DataField) -> Bool {
+        
+        let validChars = (input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).count > 0)
         switch field{
-        case .Dob:
-            print("dob should be difficult to screw up, considering that you are using a date picker")
         case .Phone:
-            print("phone must contain only numbers")
-            return (input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).count > 0) ? true : false
+            return  validChars && input.count <= 11 && input.range(of: "[^0-9]", options: .regularExpression) == nil ? true : false
         case .Email:
-            print("email must have @")
-            return (input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).count > 0) ? true : false
-        case .Address:
-            print("address must...uh do whatever actually")
-            return (input.trimmingCharacters(in: CharacterSet.whitespacesAndNewlines).count > 0) ? true : false
+            //email validation regex courtesy of https://stackoverflow.com/questions/27998409/email-phone-validation-in-swift
+            let emailRegEx = "[A-Z0-9a-z._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,4}"
+            let range = input.range(of: emailRegEx, options: .regularExpression)
+            return validChars && range != nil ? true : false
         default:
-            print("analyzed input, didn't find anything wrong")
-        return true
+            return validChars
         }
-        return true
     }
     
     func textFieldShouldReturn(_ textField: UITextField) -> Bool {
@@ -380,6 +394,7 @@ extension ProfileViewController: UITextFieldDelegate{
     }
 }
 
+//image picker delegate functions
 extension ProfileViewController: UIImagePickerControllerDelegate, UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)
@@ -427,16 +442,13 @@ extension ProfileViewController: UIImagePickerControllerDelegate, UINavigationCo
 }
 
 
-
+//generate a QR code for the current profile
 extension ProfileViewController {
     
     func generateQRCode() -> UIImage? {
         let input = CodableContact(firstName: (contactProfile?.firstName)!, lastName: contactProfile?.lastName,dob: contactProfile?.dob, phone: contactPhones.first, email: contactEmails.first, address: contactAddresses.first)
         do {
             let data = try JSONEncoder().encode(input)
-            if let validData = String(data: data,encoding: .utf8){
-                print(validData)
-            }
             
             if let filter = CIFilter(name: "CIQRCodeGenerator"){
                 filter.setValue(data, forKey: "inputMessage")

@@ -44,7 +44,7 @@ class ContactsViewController: UITableViewController {
         searchController?.obscuresBackgroundDuringPresentation = false
         searchController?.searchBar.placeholder = "Search Contacts"
         // Setup the Scope Bar
-        searchController?.searchBar.scopeButtonTitles = ["Name","Email", "Address"]
+        searchController?.searchBar.scopeButtonTitles = [SearchScope.Name.rawValue,SearchScope.Email.rawValue, SearchScope.Address.rawValue]
         searchController?.searchBar.delegate = self
         navigationItem.searchController = searchController
         definesPresentationContext = true
@@ -71,10 +71,9 @@ class ContactsViewController: UITableViewController {
             navigationController?.pushViewController(newContactVC, animated: true)
         }
     }
-    
+    //camera action for QR detection
     @objc func takeQRPhotoTapped(){
         if let QRScannerVC = storyboard?.instantiateViewController(withIdentifier: "QRScannerVC") as? QRScannerViewController{
-            print("yay!")
             QRScannerVC.delegate = self
             navigationController?.pushViewController(QRScannerVC, animated: true)
         }
@@ -148,6 +147,7 @@ class ContactsViewController: UITableViewController {
     //define what data appears in each cell
     override func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let cell = tableView.dequeueReusableCell(withIdentifier: "nameCell", for: indexPath)
+        //if search bar is active, load search results. Else, load all contacts.
         if isFiltering(){
             let key = filteredContactsDict.keys.sorted()[indexPath.section]
             let sortedContacts = filteredContactsDict[key]?.sorted(by: { $0.fullName < $1.fullName } )
@@ -199,7 +199,7 @@ class ContactsViewController: UITableViewController {
     }
 }
 
-
+//After a contact has beenc created in core data, load it into the contacts dictionary
 extension ContactsViewController: UpdateHomeScreenDelegate {
 
     func addContactToDataSource(contact: Contact) {
@@ -210,16 +210,17 @@ extension ContactsViewController: UpdateHomeScreenDelegate {
             firstCharToContactsDict?[firstChar] = contacts
             
             self.tableView.reloadData()
-        } else {
-            print("contact does not have a first name?!")
-        }        
+        }    
     }
 }
 
+//search results delegate function implementations
 extension ContactsViewController: UISearchResultsUpdating{
+    enum SearchScope: String {
+        case Name = "Name", Email = "Email", Address = "Address"
+    }
+    
     func isFiltering() -> Bool {
-//        let searchBarScopeIsFiltering = searchController?.searchBar.selectedScopeButtonIndex != 0
-//        return (searchController?.isActive)! && (!searchBarIsEmpty() || searchBarScopeIsFiltering)
         return (searchController?.isActive)!
     }
     
@@ -228,29 +229,79 @@ extension ContactsViewController: UISearchResultsUpdating{
         return searchController?.searchBar.text?.isEmpty ?? true
     }
     
-    func filterContentForSearchText(_ searchText: String, scope: String = "All") {
-        
-        filteredContactsDict = (firstCharToContactsDict?.filter{
-            $0.value.filter{ $0.fullName.lowercased().contains(searchText.lowercased()) }.count > 0
-            })!
+    
+    func filterContentForSearchText(_ searchText: String, scope: String = "Name") {
+        //this is an exceedingly ugly way to filter the dictionary of values containing the searchText: I wasn't able to write a filter function that worked, whereas this ugly implementation seems to work as intended. 
+        switch scope{
+        case SearchScope.Email.rawValue:
+            filteredContactsDict.removeAll()
+            for key in (firstCharToContactsDict?.keys)!{
+                let contacts = firstCharToContactsDict![key]
+                for contact in contacts!{
+                    let emails = contact.emails
+                    for email in emails!{
+                        let s = email as! Email
+                        if (s.address?.lowercased().contains(searchText.lowercased()))!{
+                            
+                            var currentContacts = filteredContactsDict[(contact.firstName?.first)!] ?? []
+                            currentContacts.append(contact)
+                            filteredContactsDict[(contact.firstName?.first)!] = currentContacts
+                        }
+                    }
+                }
+            }
+        case SearchScope.Address.rawValue:
+            filteredContactsDict.removeAll()
+            for key in (firstCharToContactsDict?.keys)!{
+                let contacts = firstCharToContactsDict![key]
+                for contact in contacts!{
+                    let addresses = contact.addresses
+                    for address in addresses!{
+                        let s = address as! Address
+                        if (s.street?.lowercased().contains(searchText.lowercased()))!{
+                            
+                            var currentContacts = filteredContactsDict[(contact.firstName?.first)!] ?? []
+                            currentContacts.append(contact)
+                            filteredContactsDict[(contact.firstName?.first)!] = currentContacts
+                        }
+                    }
+                }
+            }
+
+        default:
+            filteredContactsDict.removeAll()
+            for key in (firstCharToContactsDict?.keys)!{
+                let contacts = firstCharToContactsDict![key]
+                for contact in contacts!{
+                    if contact.fullName.lowercased().contains(searchText.lowercased()){
+                        var currentContacts = filteredContactsDict[(contact.firstName?.first)!] ?? []
+                        currentContacts.append(contact)
+                        filteredContactsDict[(contact.firstName?.first)!] = currentContacts
+                    }
+                }
+            }
+            //when I have time, I should refine this filter function to work as intended. Right now it doesn't filter accurately enough for some reason. 
+            //filteredContactsDict = (firstCharToContactsDict?.filter{$0.value.filter{ $0.fullName.lowercased().contains(searchText.lowercased()) }.count > 0})!
+        }
         
         tableView.reloadData()
     }
     
     func updateSearchResults(for searchController: UISearchController) {
-        //let searchBar = searchController.searchBar
-        //let scope = searchBar.scopeButtonTitles![searchBar.selectedScopeButtonIndex]
-        filterContentForSearchText(searchController.searchBar.text!)
+        let searchBar = searchController.searchBar
+        let scope = searchBar.scopeButtonTitles![searchBar.selectedScopeButtonIndex]
+        filterContentForSearchText(searchBar.text!, scope: scope)
     }
 }
 
-
+//search bar delegate functions
 extension ContactsViewController: UISearchBarDelegate{
     func searchBar(_ searchBar: UISearchBar, selectedScopeButtonIndexDidChange selectedScope: Int) {
         filterContentForSearchText(searchBar.text!, scope: searchBar.scopeButtonTitles![selectedScope])
     }
 }
 
+//after QR scanner detects a valid contact, create it from the decoded contact
 extension ContactsViewController: ScannerDelegate{
     func createContactFrom(decoded contact: CodableContact) {
         let newContact = NewContact(firstName: contact.firstName, lastName: contact.lastName, uniqueID: UUID.init().uuidString, dob: contact.dob, phone: contact.phone, email: contact.email, address: contact.address, profilePicture: nil)

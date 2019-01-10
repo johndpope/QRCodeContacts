@@ -128,11 +128,11 @@ class CoreDataManager {
                         
                         let oldPhone = try managedContext.fetch(oldPhoneRequest)
                         if let validOldPhone = oldPhone.first{
-                            print("#phones before ", validContact.phones?.count as Any)
+                            
                             managedContext.delete(validOldPhone)
                             validOldPhone.contact = nil
                             validContact.removeFromPhones(validOldPhone)
-                            print("#phones after ", validContact.phones?.count as Any)
+                            
                         }
                         didUpdateSuccessfully = true
                     }
@@ -152,11 +152,11 @@ class CoreDataManager {
                         
                         let oldEmail = try managedContext.fetch(oldEmailRequest)
                         if let validOldEmail = oldEmail.first{
-                            print("#emails before ", validContact.emails?.count as Any)
+                            
                             managedContext.delete(validOldEmail)
                             validOldEmail.contact = nil
                             validContact.removeFromEmails(validOldEmail)
-                            print("#emails after ", validContact.emails?.count as Any)
+                            
                         }
                         didUpdateSuccessfully = true
                         
@@ -176,11 +176,11 @@ class CoreDataManager {
                         
                         let oldAddress = try managedContext.fetch(oldAddressRequest)
                         if let validOldAddress = oldAddress.first{
-                            print("#addresses before ", validContact.addresses?.count as Any)
+                            
                             managedContext.delete(validOldAddress)
                             validOldAddress.contact = nil
                             validContact.removeFromAddresses(validOldAddress)
-                            print("#addresses after " ,validContact.addresses?.count as Any)
+                            
                         }
                         didUpdateSuccessfully = true
                     }

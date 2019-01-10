@@ -114,8 +114,7 @@ class NewContactViewController: UIViewController{
     
     //check for validity of contact info. If valid, pass info to homeVC and dismiss. Else, throw up an alert VC telling the user what went wrong.
     @objc func saveContactTapped() {
-        if let firstName = firstNameTextField.text{
-            
+        if let firstName = firstNameTextField.text, !firstName.isEmpty{
             let uniqueID = UUID.init().uuidString
             
             let lastName = lastNameTextField.text
@@ -133,14 +132,16 @@ class NewContactViewController: UIViewController{
             let newContact = NewContact(firstName: firstName, lastName: lastName, uniqueID: uniqueID, dob: validDate, phone: phone, email: email, address: address, profilePicture: profilePicture)
             coreDataManager.createNew(contact: newContact)
         } else {
-            print("invalid contact!")
+            let ac = UIAlertController(title: "Please enter a first name!", message: nil, preferredStyle: .alert)
+            ac.addAction(UIAlertAction(title: "OK", style: .default))
+            present(ac, animated: true)
         }
-        
         dismissNewContactVC()
         
     }
 }
 
+//textfield delegate functions
 extension NewContactViewController: UITextFieldDelegate{
     
     
@@ -175,7 +176,7 @@ extension NewContactViewController: UITextFieldDelegate{
     func formatForView(date: Date) -> String{
         datePicker = date
         let formatter = DateFormatter()
-        formatter.dateFormat = "MMM dd,yyyy"
+        formatter.dateFormat = "MMM dd, yyyy"
         return formatter.string(from:date)
     }
     
@@ -185,6 +186,7 @@ extension NewContactViewController: UITextFieldDelegate{
     
 }
 
+//image picker delegate functions
 extension NewContactViewController: UIImagePickerControllerDelegate,UINavigationControllerDelegate {
     func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
         picker.dismiss(animated: true)

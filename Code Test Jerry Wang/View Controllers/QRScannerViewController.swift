@@ -83,7 +83,7 @@ class QRScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsD
             captureSession.stopRunning()
         }
     }
-    
+    //QR delegate function to decode QRCode into contacts object
     func metadataOutput(_ output: AVCaptureMetadataOutput, didOutput metadataObjects: [AVMetadataObject], from connection: AVCaptureConnection) {
         captureSession.stopRunning()
         
@@ -94,7 +94,7 @@ class QRScannerViewController: UIViewController, AVCaptureMetadataOutputObjectsD
                     if let validData = readableObject?.stringValue?.data(using: .utf8){
                         
                         let contact = try JSONDecoder().decode(CodableContact.self,from:validData)
-                        //dump(contact)
+                        
     AudioServicesPlaySystemSound(SystemSoundID(kSystemSoundID_Vibrate))
                         delegate.createContactFrom(decoded: contact)
                     }
