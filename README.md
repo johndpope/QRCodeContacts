@@ -1,6 +1,6 @@
 # QRCodeContacts
 
-![contact gif](https://thumbs.gfycat.com/DimLegalFurseal-small.gif)
+![contact gif](https://thumbs.gfycat.com/DimLegalFurseal-size_restricted.gif)
 
 This contacts app comes with basic CRUD functionality, a search bar and a QR Code generator/ scanner. 
 
