@@ -18,5 +18,7 @@ After you create a contact on the app, you may share it with other users of the 
 Each contact is editable, searchable (name, email, and address fields), deletable and shareable. 
 
 
-Please send thoughts, comments, bug reports to jerry.wang.ct@gmail.com
+TODO: 
+- This project desperately needs to be refactored. It's a flaming dumpster fire of code that's difficult to make sense of. 
+- also, this was my first real experience with Core Data so most of the core data's managed context objects are wrapped around another layer of my own custom data structures. There must be a way to cut out the middleman...
 
